@@ -64,8 +64,8 @@ namespace PolylineSmoother
     double pt_spacing_, total_distance_, max_t_;
     std::vector<int> source_indices_;
     const shape_msgs::Mesh mesh_;
-    std::vector<Pose> pose_arrays_;
-
+//    std::vector<Pose> pose_arrays_;
+    geometry_msgs::PoseArray pose_arrays_;
 
   private:
 

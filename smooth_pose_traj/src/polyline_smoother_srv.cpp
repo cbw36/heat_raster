@@ -5,6 +5,8 @@
 #include <smooth_pose_traj/PolylineSmoother.h> // the service
 #include <smooth_pose_traj/SmoothPoseTrajectory.h>
 #include <smooth_pose_traj/polyline_smoother.hpp> // the .hpp for this cpp file
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 
 static const std::string POLYLINE_SMOOTHER = "polyline_smoother";
 
@@ -46,7 +48,8 @@ public:
     smooth_pose_traj::SmoothPoseTrajectory::Response smooth_res;
     std::vector<geometry_msgs::PoseArray> smoothed_tool_paths;
     smooth_req.pt_spacing = req.pt_spacing;
-    smooth_req.input_poses.poses.assign(PS.pose_arrays_.begin(), PS.pose_arrays_.end());
+    geometry_msgs::PoseArray pa = PS.pose_arrays_;
+//    smooth_req.input_poses.poses.assign(PS.pose_arrays_.begin(), PS.pose_arrays_.end());
 
     //    return(PS.process(res.output_poses, req.pt_spacing));
   }

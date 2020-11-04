@@ -9,9 +9,9 @@
 #define DEBUG_NORMALS 0 // computation of normals
 
 
-typedef struct Pose{
-  double qx,qy,qz,qw,x,y,z;
-}Pose;
+//typedef struct Pose{
+//  double qx,qy,qz,qw,x,y,z;
+//}Pose;
 
 namespace PolylineSmoother
 {
@@ -79,10 +79,11 @@ namespace PolylineSmoother
     // 4. compute quaternion from 3x3 rotation defined by x_vec|y_vec|z_vec
     // 5. use most recent quat for last in sequence
 
-    pose_arrays_.clear();
+//    pose_arrays_.
+    geometry_msgs::PoseArray new_pose_array;
     for(int i=0; i<source_indices_.size(); i++)
     {
-      Pose P;
+      geometry_msgs::Pose P;
       Eigen::Vector3d z_vec;
       double zv[3];
 
@@ -101,9 +102,9 @@ namespace PolylineSmoother
         y_vec.normalize();
 
         // the point is the vertex
-        P.x = p1[0];
-        P.y = p1[1];
-        P.z = p1[2];
+        P.position.x = p1[0];
+        P.position.y = p1[1];
+        P.position.z = p1[2];
         Eigen::Matrix3d R(3,3);
         R(0,0) = x_vec(0); R(0,1) = y_vec(0); R(0,2) = z_vec(0);
         R(1,0) = x_vec(1); R(1,1) = y_vec(1); R(1,2) = z_vec(1);
@@ -117,11 +118,11 @@ namespace PolylineSmoother
            R(1,0),R(1,1),R(1,2),
            R(2,0),R(2,1),R(2,2));
         }
-        P.qw = Q.w();
-        P.qx = Q.x();
-        P.qy = Q.y();
-        P.qz = Q.z();
-        pose_arrays_.push_back(P);
+        P.orientation.w = Q.w();
+        P.orientation.x = Q.x();
+        P.orientation.y = Q.y();
+        P.orientation.z = Q.z();
+        new_pose_array.poses.push_back(P);
       }
       else
       {
@@ -142,6 +143,7 @@ namespace PolylineSmoother
 //        ROS_ERROR("POLYLINE_SMOOTHER.CPP, PolylineSmoother::compute_pose_arrays() source_indices[i].size()>1")
 //      }
     }// end for each vertex sequence
+    pose_arrays_ = new_pose_array;
   }
 
 }// end of namespace PolylineSmoother
