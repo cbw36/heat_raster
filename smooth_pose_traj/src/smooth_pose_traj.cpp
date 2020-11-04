@@ -314,4 +314,5 @@ namespace SmoothPoseTraj
     return(P);
   }// end getPoseAtDistance
 
+
 }// end of namespace SmoothPoseTraj

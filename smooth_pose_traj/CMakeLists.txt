@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   std_srvs
   message_generation
+  shape_msgs
 )
 
 add_definitions(${PCL_DEFINITIONS})
@@ -19,12 +20,14 @@ add_definitions(${PCL_DEFINITIONS})
 add_service_files(
    FILES
      SmoothPoseTrajectory.srv
+     PolylineSmoother.srv
 )
 
 generate_messages(
   DEPENDENCIES
     geometry_msgs
     std_msgs
+    shape_msgs
 )
 
 catkin_package(
@@ -32,12 +35,14 @@ catkin_package(
     include
   LIBRARIES
     smooth_pose_traj
+    polyline_smoother
   CATKIN_DEPENDS
     geometry_msgs
     message_runtime
     roscpp
     std_msgs
     std_srvs
+    shape_msgs
   DEPENDS
     Boost
 )
@@ -51,7 +56,15 @@ add_executable(smooth_pose_traj_srv src/smooth_pose_traj_srv.cpp src/smooth_pose
 add_dependencies(smooth_pose_traj_srv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(smooth_pose_traj_srv ${catkin_LIBRARIES} )
 
+add_executable(polyline_smoother_srv src/polyline_smoother_srv.cpp src/polyline_smoother.cpp)
+add_dependencies(polyline_smoother_srv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(polyline_smoother_srv ${catkin_LIBRARIES} )
+
 install(TARGETS smooth_pose_traj_srv
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS polyline_smoother_srv
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
