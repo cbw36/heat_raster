@@ -33,6 +33,7 @@ add_action_files(
 add_service_files(
  FILES
     GenerateHeatPaths.srv
+    PolylineSmoother.srv
 )
 
 ## Generate dependent messages

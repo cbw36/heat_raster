@@ -1,3 +1,4 @@
+#include <ros/ros.h>
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
@@ -81,18 +82,19 @@ namespace PolylineSmoother
 
 //    pose_arrays_.
     geometry_msgs::PoseArray new_pose_array;
-    for(int i=0; i<source_indices_.size(); i++)
+    ROS_ERROR_STREAM("compupte_pose_arrays start index count = " << source_indices_.size());
+    for(int i=0; i<source_indices_.size()-1; i++)
     {
       geometry_msgs::Pose P;
       Eigen::Vector3d z_vec;
       double zv[3];
 
       int vj = source_indices_.at(i);
-      int vn = source_indices_.at(i+1);
+      int vn = source_indices_.at(i+1); //TODO what to do about i+1?
       face_normal(vj, z_vec); // most reliable
       if(DEBUG_QUAT) printf("zv = [ %6.3lf %6.3lf %6.3lf]\n", z_vec(0), z_vec(1), z_vec(2));
       Eigen::Vector3d p1(mesh_.vertices[i].x, mesh_.vertices[i].y, mesh_.vertices[i].z);
-      Eigen::Vector3d p2(mesh_.vertices[i+1].x, mesh_.vertices[i+1].y, mesh_.vertices[i+1].z);
+      Eigen::Vector3d p2(mesh_.vertices[vn].x, mesh_.vertices[vn].y, mesh_.vertices[vn].z);
       Eigen::Vector3d x_vec = p2-p1;
       x_vec = x_vec - x_vec.dot(z_vec)*z_vec;
       if(x_vec.norm() != 0.0)
@@ -144,6 +146,7 @@ namespace PolylineSmoother
 //      }
     }// end for each vertex sequence
     pose_arrays_ = new_pose_array;
+    ROS_ERROR_STREAM("compute_pose_arrays end index count = " << pose_arrays_.poses.size());
   }
 
 }// end of namespace PolylineSmoother

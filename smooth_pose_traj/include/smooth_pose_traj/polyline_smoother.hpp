@@ -35,10 +35,6 @@
 namespace PolylineSmoother
 {
 
-  struct Pose{
-    double qx,qy,qz,qw,x,y,z;
-  };
-
   class PolylineSmoother
   {
 
