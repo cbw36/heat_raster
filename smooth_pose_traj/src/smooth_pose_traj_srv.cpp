@@ -2,7 +2,7 @@
 #include <boost/format.hpp>
 #include <mutex>
 #include <thread>
-#include <smooth_pose_traj/SmoothPoseTrajectory.h> // the service
+#include <heat_msgs/SmoothPoseTrajectory.h> // the service
 #include <smooth_pose_traj/smooth_pose_traj.hpp> // the .hpp for this cpp file
 
 static const std::string POSE_TRAJ_SMOOTHER = "pose_trajectory_smoother";
@@ -23,13 +23,10 @@ public:
 
   }
 
-  bool smoothPoseTrajCB(smooth_pose_traj::SmoothPoseTrajectory::Request& req, smooth_pose_traj::SmoothPoseTrajectory::Response& res)
+  bool smoothPoseTrajCB(heat_msgs::SmoothPoseTrajectory::Request& req, heat_msgs::SmoothPoseTrajectory::Response& res)
   {
     SmoothPoseTraj::SmoothPoseTraj SPT(req.input_poses, req.pt_spacing);
-    ROS_ERROR_STREAM("SPTCB input poses = " << req.input_poses.poses.size());
-    bool result = SPT.process(res.output_poses, req.pt_spacing);
-    ROS_ERROR_STREAM("SPTCB output poses = " << res.output_poses.poses.size());
-    return result;
+    return(SPT.process(res.output_poses, req.pt_spacing));
   }
   ros::ServiceServer smooth_pose_traj_srv_;
   ros::NodeHandle nh_;

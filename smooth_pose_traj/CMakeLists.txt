@@ -17,12 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_definitions(${PCL_DEFINITIONS})
 
-
-add_service_files(
-   FILES
-     SmoothPoseTrajectory.srv
-)
-
 generate_messages(
   DEPENDENCIES
     geometry_msgs
@@ -64,10 +58,6 @@ target_link_libraries(polyline_smoother_srv ${catkin_LIBRARIES} )
 install(TARGETS smooth_pose_traj_srv polyline_smoother_srv
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-#install(TARGETS polyline_smoother_srv
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

@@ -34,6 +34,7 @@ add_service_files(
  FILES
     GenerateHeatPaths.srv
     PolylineSmoother.srv
+    SmoothPoseTrajectory.srv
 )
 
 ## Generate dependent messages

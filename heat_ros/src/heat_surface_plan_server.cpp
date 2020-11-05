@@ -5,7 +5,7 @@
 #include <thread>
 #include <heat_msgs/GenerateHeatToolPathsAction.h>
 #include <heat_ros/heat_surface_planner.hpp>
-#include <smooth_pose_traj/SmoothPoseTrajectory.h> // the service to smooth and sample a trajectory
+#include <heat_msgs/SmoothPoseTrajectory.h> // the service to smooth and sample a trajectory
 static const std::string GENERATE_TOOL_PATHS_ACTION = "generate_heat_tool_paths";
 static const std::string SMOOTH_TOOL_PATHS_SERVICE = "pose_trajectory_smoother";
 
@@ -21,7 +21,7 @@ public:
   HeatServer(ros::NodeHandle nh, std::string action_name):
     nh_(nh), as_(nh,action_name,false)
   {
-    path_smooth_client_ = nh_.serviceClient<smooth_pose_traj::SmoothPoseTrajectory>(SMOOTH_TOOL_PATHS_SERVICE);
+    path_smooth_client_ = nh_.serviceClient<heat_msgs::SmoothPoseTrajectory>(SMOOTH_TOOL_PATHS_SERVICE);
   }
 
   ~HeatServer()
@@ -117,8 +117,8 @@ protected:
       path_gen.planPaths(goal->surface_meshes[i], goal->sources[0].source_indices, heat_tool_paths);
 
       // smooth and resample paths at perscribed point spacing
-      smooth_pose_traj::SmoothPoseTrajectory::Request smooth_req;
-      smooth_pose_traj::SmoothPoseTrajectory::Response smooth_res;
+      heat_msgs::SmoothPoseTrajectory::Request smooth_req;
+      heat_msgs::SmoothPoseTrajectory::Response smooth_res;
       std::vector<geometry_msgs::PoseArray> smoothed_tool_paths;
       smooth_req.pt_spacing = config.pt_spacing;
       for(int j=0; j<heat_tool_paths.size(); j++){

@@ -1,5 +1,4 @@
 float64 pt_spacing
-geometry_msgs/PoseArray input_points
 int32[] source_indices # indices of the vertices in the path on the mesh
                        # in heath method there are nested lists, but here only return one path.
 shape_msgs/Mesh surface_mesh

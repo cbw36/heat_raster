@@ -50,37 +50,15 @@ namespace PolylineSmoother
 
     void face_normal(int vertex_index, Eigen::Vector3d& normal_vec);
 
-    void planPaths(const shape_msgs::Mesh& mesh,
-                   const std::vector<int>& source_indices,
-                   std::vector<geometry_msgs::PoseArray>& paths);
-
     void compute_pose_arrays();
 
   public:
     double pt_spacing_, total_distance_, max_t_;
     std::vector<int> source_indices_;
     const shape_msgs::Mesh mesh_;
-//    std::vector<Pose> pose_arrays_;
     geometry_msgs::PoseArray pose_arrays_;
 
   private:
-
-
-    /** \brief Number of vertices. */
-    size_t nVertices;
-
-    /** \brief Vertex coordinates as consecutive (x,y,z) triples. [3 x nVertices] */
-    double* vertices;
-
-    /** \brief Texture coordinates as consecutive (u,v) pairs. [2 x nVertices] */
-    double* texCoords;
-
-    /** \brief Number of triangles. */
-    size_t nFaces;
-
-    /** \brief Triangles as consecutive (i,j,k) triples of 0-based vertex indices. [3 x nFaces] */
-    size_t* faces;
-
 
   }; // end class PolylineSmoother
 
