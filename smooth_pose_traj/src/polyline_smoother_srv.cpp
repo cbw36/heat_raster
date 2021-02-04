@@ -12,16 +12,6 @@ static const std::string POLYLINE_SMOOTHER = "polyline_smoother";
 static const std::string SMOOTH_TOOL_PATHS_SERVICE = "pose_trajectory_smoother";
 
 
-/*
-bool add(beginner_tutorials::AddTwoInts::Request  &req,
-         beginner_tutorials::AddTwoInts::Response &res)
-{
-  res.sum = req.a + req.b;
-  ROS_INFO("request: x=%ld, y=%ld", (long int)req.a, (long int)req.b);
-  ROS_INFO("sending back response: [%ld]", (long int)res.sum);
-  return true;
-}
-*/
 namespace PolylineSmoother
 {
 class PolylineSmootherSrv
