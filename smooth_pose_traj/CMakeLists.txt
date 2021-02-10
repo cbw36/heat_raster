@@ -28,7 +28,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   LIBRARIES
-    smooth_pose_traj
+    ${PROJECT_NAME}
   CATKIN_DEPENDS
     geometry_msgs
     message_runtime
@@ -46,22 +46,21 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(${PROJECT_NAME} src/smooth_pose_traj.cpp)
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} )
 
-add_executable(smooth_pose_traj_srv src/smooth_pose_traj_srv.cpp src/smooth_pose_traj.cpp)
+add_executable(smooth_pose_traj_srv src/smooth_pose_traj_srv.cpp)
 add_dependencies(smooth_pose_traj_srv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(smooth_pose_traj_srv ${catkin_LIBRARIES} )
+target_link_libraries(smooth_pose_traj_srv ${PROJECT_NAME} ${catkin_LIBRARIES} )
 
-add_executable(polyline_smoother_srv src/polyline_smoother_srv.cpp src/polyline_smoother.cpp)
-add_dependencies(polyline_smoother_srv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(polyline_smoother_srv ${catkin_LIBRARIES} )
-
-install(TARGETS smooth_pose_traj_srv polyline_smoother_srv
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS ${PROJECT_NAME} smooth_pose_traj_srv
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
-
