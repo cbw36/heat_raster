@@ -5,6 +5,8 @@ project(heat_ros)
 add_compile_options(-std=c++14)
 
 find_package(libgeodesic REQUIRED)
+find_package(geometry-central REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 ## Find catkin macros and libraries
 
@@ -44,6 +46,7 @@ include_directories(include
   ${Boost_INCLUDE_DIRS}
   ${LAPACK_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
   )
 
 add_executable(heat_surface_plan_server
@@ -56,7 +59,9 @@ target_link_libraries(heat_surface_plan_server
   ${VTK_LIBRARIES}
   libgeodesic::libgeodesic
   libgeodesic::libgeodesic_cpp
+  geometry-central::geometry-central
 )
+target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
 
 #############
 ## Install ##
