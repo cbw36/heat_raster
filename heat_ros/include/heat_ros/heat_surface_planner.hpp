@@ -27,13 +27,19 @@
 #include <string.h>
 #include <eigen3/Eigen/Eigen>
 
-extern "C" {
-#include "libgeodesic/hmTriDistance.h"
-#include "libgeodesic/hmContext.h"
-#include "libgeodesic/hmUtility.h"
-#include "libgeodesic/hmVectorSizeT.h"
-}
-#include "libgeodesic/hmHeatPath.hpp"
+//extern "C" {
+//#include "libgeodesic/hmTriDistance.h"
+//#include "libgeodesic/hmContext.h"
+//#include "libgeodesic/hmUtility.h"
+//#include "libgeodesic/hmVectorSizeT.h"
+//}
+//#include "libgeodesic/hmHeatPath.hpp"
+#include "geometrycentral/surface/heat_method_distance.h"
+#include "geometrycentral/surface/meshio.h"
+#include "geometrycentral/surface/surface_mesh.h"
+
+#include "heat_ros/hm_heat_path.hpp"
+
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 
@@ -78,14 +84,14 @@ public:
   {
     // standard parameters
     nSourceSets_ = 0;
-    smoothness_ = -1.0;
-    boundaryConditions_ = -1.0;
-    verbose_ = 0;
+    smoothness_ = -1.0; //TODO is this necessary?
+    boundaryConditions_ = -1.0; //TODO is this neceessary?
+    verbose_ = 0; //TODO is this necessary?
 
     /* initialize data structures*/
-    hmContextInitialize(&context_);
-    hmTriMeshInitialize(&surface_);
-    hmTriDistanceInitialize(&distance_);
+//    hmContextInitialize(&context_);
+//    hmTriMeshInitialize(&surface_);
+//    hmTriDistanceInitialize(&distance_);
   }
 
   static ProcessConfig getDefaultConfig()
@@ -129,13 +135,25 @@ public:
    **/
   bool getCuttingPlane(const shape_msgs::Mesh& mesh, const double raster_angle, Eigen::Vector3d& N, double& D);
 
+  double estimateMeshTime(const shape_msgs::Mesh& mesh);
+
+  void subtractVector(geometry_msgs::Point &out, geometry_msgs::Point &in_1, geometry_msgs::Point &in_2);
+
+  void normVector(double &norm, geometry_msgs::Point &vec);
+
+
+
 public:
   ProcessPath path_;
   ProcessConfig config_;
 
-  hmContext context_;
-  hmTriMesh surface_;
-  hmTriDistance distance_;
+//  hmContext context_;
+//  hmTriMesh surface_;
+//  hmTriDistance distance_;
+
+  std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh_;
+  std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry_;
+
 
   // parameters
   int nSourceSets_;

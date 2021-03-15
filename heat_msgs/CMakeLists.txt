@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   pcl_msgs
   shape_msgs
+
 )
 
 

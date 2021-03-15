@@ -4,7 +4,6 @@ project(heat_ros)
 
 add_compile_options(-std=c++14)
 
-find_package(libgeodesic REQUIRED)
 find_package(geometry-central REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -29,7 +28,6 @@ endif()
 catkin_package(
   INCLUDE_DIRS
     include
-    ${libgeodesic_INCLUDE_DIRS}
   LIBRARIES
   CATKIN_DEPENDS
     actionlib
@@ -38,7 +36,6 @@ catkin_package(
     smooth_pose_traj
   DEPENDS
     VTK
-    libgeodesic
 )
 
 include_directories(include
@@ -52,21 +49,32 @@ include_directories(include
 add_executable(heat_surface_plan_server
   src/heat_surface_plan_server.cpp
   src/heat_surface_planner.cpp
+  src/hm_heat_path.cpp
 )
 
 target_link_libraries(heat_surface_plan_server
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
-  libgeodesic::libgeodesic
-  libgeodesic::libgeodesic_cpp
   geometry-central::geometry-central
 )
 target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
 
+add_executable(gc_heat_method
+  src/gc_heat_method.cpp)
+
+
+target_link_libraries(gc_heat_method
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+)
+target_compile_features(gc_heat_method PUBLIC cxx_std_11)
+
+
 #############
 ## Install ##
 #############
-install(TARGETS  heat_surface_plan_server 
+install(TARGETS  heat_surface_plan_server
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
