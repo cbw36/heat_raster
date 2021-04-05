@@ -1,0 +1,6 @@
+# geometry-central
+- git:
+    local-name: geometry-central
+    uri: 'https://github.com/Levi-Armstrong/geometry-central.git'
+    version: feature/AddConfigurePackageSupport
+
