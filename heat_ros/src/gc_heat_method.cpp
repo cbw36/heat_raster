@@ -24,58 +24,72 @@ int main(int argc, char** argv) {
 
 //    std::vector<Vector3> vertices;
 
-//    Eigen::MatrixXd vMat(100,3);
-//    Eigen::MatrixXi fMat(200, 3);
+    Eigen::MatrixXd vMat(100,3);
+    Eigen::MatrixXi fMat(200, 3);
 
-    int n = 10;
-    SimplePolygonMesh mesh = SimplePolygonMesh();
+    int n = 1000;
+//    SimplePolygonMesh mesh = SimplePolygonMesh();
     for (int i=0; i<n; i++){
       for (int j=0; j<n; j++){
-//        vMat(i*n + j, 0) = i;
-//        vMat(i*n + j, 1) = j;
-//        vMat(i*n + j, 2) = 0;
-        Vector3 v{(double)i, (double)j, 0};
-        mesh.vertexCoordinates.push_back(v);
+        vMat(i*n + j, 0) = i*0.001;
+        vMat(i*n + j, 1) = j*0.001;
+        vMat(i*n + j, 2) = 0.0;
+//        Vector3 v{(double)i, (double)j, 0};
+//        mesh.vertexCoordinates.push_back(v);
       }
     }
 //    std::cout << "rows = "<< vMat.rows() << " and cols = " << vMat.cols() << "\n";
 //    printf("done 1");
     for (int i=0; i<n; i++){
       for (int j=0; j<n; j++){
-//        fMat(i*n + j, 0) = i*n + j;
-//        fMat(i*n + j, 1) = i*n + j+1;
-//        fMat(i*n + j, 2) = (i+1)*n + j;
+        fMat(i*n + j, 0) = i*n + j;
+        fMat(i*n + j, 1) = i*n + j+1;
+        fMat(i*n + j, 2) = (i+1)*n + j;
 
-//        fMat(i*n + j + 1, 0) = i*n + j+1;
-//        fMat(i*n + j + 1, 1) = (i+1)*n + j;
-//        fMat(i*n + j + 1, 2) = (i+1)*n + j+1;
-        std::vector<size_t> triangle_1;
-        triangle_1.push_back(i*n + j);
-        triangle_1.push_back(i*n + j+1);
-        triangle_1.push_back((i+1)*n + j);
-        mesh.polygons.push_back(triangle_1);
+        fMat(i*n + j + 1, 0) = i*n + j+1;
+        fMat(i*n + j + 1, 1) = (i+1)*n + j;
+        fMat(i*n + j + 1, 2) = (i+1)*n + j+1;
+//        std::vector<size_t> triangle_1;
+//        triangle_1.push_back(i*n + j);
+//        triangle_1.push_back(i*n + j+1);
+//        triangle_1.push_back((i+1)*n + j);
+//        mesh.polygons.push_back(triangle_1);
 
-        std::vector<size_t> triangle_2;
-        triangle_2.push_back(i*n + j+1);
-        triangle_2.push_back((i+1)*n + j);
-        triangle_2.push_back((i+1)*n + j+1);
-        mesh.polygons.push_back(triangle_2);
+//        std::vector<size_t> triangle_2;
+//        triangle_2.push_back(i*n + j+1);
+//        triangle_2.push_back((i+1)*n + j);
+//        triangle_2.push_back((i+1)*n + j+1);
+//        mesh.polygons.push_back(triangle_2);
       }
     }
 
 //    geometrycentral::surface::Vertex v1 = mesh_->vertex(0);
 //    geometrycentral::Vector3& pos1 = geometry_->inputVertexPositions[v1];
 
-//    std::unique_ptr<SurfaceMesh> mesh;
-//    std::unique_ptr<VertexPositionGeometry> geometry;
-//    std::tie(mesh, geometry) = makeSurfaceMeshAndGeometry(vMat, fMat);
+    std::unique_ptr<SurfaceMesh> mesh;
+    std::unique_ptr<VertexPositionGeometry> geometry;
+    std::tie(mesh, geometry) = makeSurfaceMeshAndGeometry(vMat, fMat);
+    HeatMethodDistanceSolver heatSolver(*geometry);
+
+    std::vector<Vertex> sourceVerts;
+    for (int i=0; i<n;i++){
+      sourceVerts.push_back(mesh->vertex(i));
+    }
+    VertexData<double> distToSource = heatSolver.computeDistance(sourceVerts);
+    for (int i=0;i<n;i++){
+      printf("Distances for row %d\n", i);
+      for (int j=0;j<n;j++){
+        printf("%f, ", distToSource[i*n+j]);
+      }
+      printf("\n");
+    }
 //    writeSurfaceMesh(*mesh, *geometry, "planar_mesh.obj");
 
 //    SurfaceMesh surface_mesh = SurfaceMesh(mesh.polygons);
 //    printf("done 2");
 //    std::cout << "nvertices = " << mesh.nVertices() << "and nfaces = " << mesh.nFaces() << "\n";
-    std::string filename ("planar_mesh.ply");
-    mesh.writeMesh(filename);
+//    std::string filename ("planar_mesh.obj");
+//    mesh.writeMesh(filename);
 //    printf("done 3");
 //    for(int i=0;i<mesh->nVertices();i++){
 //      for(int j=0;j<mesh->nVertices();j++){
