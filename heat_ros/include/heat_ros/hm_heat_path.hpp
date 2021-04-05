@@ -57,6 +57,8 @@
 //#include "libgeodesic/hmUtility.h"
 //}
 #include "geometrycentral/surface/surface_mesh.h"
+#include "geometrycentral/surface/vertex_position_geometry.h"
+
 
 static const size_t hmVchainDefaultStorage = 16;
 
@@ -72,13 +74,14 @@ typedef struct vchain
   std::vector<int> entries;
 } vchain;
 
-int max_d_exclude_v(std::vector<double>& d, double v_exclude);
+//int max_d_exclude_v(std::vector<double>& d, double v_exclude);
 void move_vertices(std::vector<int> from,
                    std::vector<int> to);  // move one list of vertices to another, leaving from vector empty // 03.03
-void showVectorSizeT(std::vector<int> V, char* msg); // 03.03
-void showNeighbors(const std::vector<double>* VN, char* msg);
-void saveVertices(std::vector<int> VI, double* vertices, char* file_name, char* vector_name); // 03.03
-double vertex_distance(double* vertices, int v1_index, int v2_index);
+//void showNeighbors(const std::vector<double>* VN, char* msg);
+//void saveVertices(std::vector<int> VI, double* vertices, char* file_name, char* vector_name); // 03.03
+double vertex_distance(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                       std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
+                       int v1_index, int v2_index);
 
 //-------------------------------------------------------------------------------------------
 /// Cycle detector for an undirected graph
@@ -115,8 +118,10 @@ public:
   hmTriHeatPaths();
 
   /** \brief constructor */
-  hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, double raster_spacing,
-                 geometrycentral::surface::VertexData<double> dist_to_source, double time);
+  hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                 std::shared_ptr<geometrycentral::surface::VertexPositionGeometry>,
+                 geometrycentral::surface::VertexData<double> dist_to_source,
+                 double raster_spacing, double time);
   //    hmTriHeatPaths(hmTriDistance *distance, int num_levels,  std::vector<int> S);
 
   /** \brief default destructor */
@@ -125,44 +130,43 @@ public:
   };
 
   // find all vertices in each band
-  void compute_inband_verticies(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int>& sources);
+  void compute_inband_verticies(const std::vector<int>& sources);
 
   // find all vertex chains in each band (all edge connected vertices in same band)
-  void compute_vchains(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+  void compute_vchains();
 
   // find all chains in each band
-  void compute_vchain_graphs(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+  void compute_vchain_graphs();
 
   // find distances between first and all other vertices
-  bool compute_dijkstras_on_graph(vertex_des& s, VChainGraph& G, std::vector<double>& d, std::vector<vertex_des>& p);
+//  bool compute_dijkstras_on_graph(vertex_des& s, VChainGraph& G, std::vector<double>& d, std::vector<vertex_des>& p);
 
   // find paths in each Gs_[i]
-  void compute_depth_first_paths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+  void compute_depth_first_paths();
 
   // copies path j at tail of path i, j is reversed if invert_j is true
   void concatenate_paths(int path_i, int path_j, bool invert_j);
 
   // concatenates paths that end near one another's start or stop
-  void connect_paths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+  void connect_paths();
 
   // adds the sources as a vertex sequence
-  void add_sources_to_sequences(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int>& source_indices);
-  void add_sources_to_sequences(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int> sources); // 03.03
+//  void add_sources_to_sequences(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int>& source_indices);
+//  void add_sources_to_sequences(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int> sources); // 03.03
 
   // convert paths to Pose Array
-  void compute_pose_arrays(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+  void compute_pose_arrays();
 
   // reduce graph excluding vertices close to these
-  void reduce_graph_exclude_near_verts(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
-                                       VChainGraph& G_in,
+  void reduce_graph_exclude_near_verts(VChainGraph& G_in,
                                        VChainGraph& G_out,
                                        const std::vector<vertex_des>& V_e);
 
   // find a path from a reduced form of each Gs_[i]
-  std::vector<hmTriHeatPaths::vertex_des> find_path(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, VChainGraph& G);
+  std::vector<hmTriHeatPaths::vertex_des> find_path(VChainGraph& G);
 
   // compute everything
-  void compute(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, const std::vector<int>& source_indices);
+  void compute(const std::vector<int>& source_indices);
 
   void move_vertices(std::vector<int>& from, std::vector<int>& to);
 
@@ -172,16 +176,16 @@ public:
    * @input vertex_list: theall inband vertex indices for this band
    * @input vchain: starts with the first vertex in vertex_list, and finds all connected neighbors that are in the same band. Begins empty.
    **/
-  char extract_vchain(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, std::vector<int> &vertex_list, double band, std::vector<int>& vchain); // 03.03
+  char extract_vchain(std::vector<int> &vertex_list, double band, std::vector<int>& vchain); // 03.03
 
   // build a graph using a vchain,  all edge connected vertices in same distance band
-  void build_vchain_graph(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, std::vector<int> vchain, VChainGraph& G); // 03.03
+  void build_vchain_graph(std::vector<int> &vchain, VChainGraph& G); // 03.03
 
   // write the paths found using bfs
-  void octave_output_paths(std::string filename, std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
+//  void octave_output_paths(std::string filename, std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh);
 
   // write source set as a path for display
-  void octave_output_sources(std::string filename, std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, std::vector<int> sourceSets); // 03.03
+//  void octave_output_sources(std::string filename, std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, std::vector<int> sourceSets); // 03.03
 
   struct CycleDetector : public boost::dfs_visitor<>
   {
@@ -198,10 +202,12 @@ public:
   struct PathGen : public boost::bfs_visitor<>
   {
   public:
-    PathGen(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh)
+    PathGen(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+            std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
+            double time) : mesh_(mesh), geometry_(geometry)
     {
 //      vertices = mesh->vertices();
-//      ave_edge_length = sqrt(distance->time); // 03.03
+      ave_edge_length = sqrt(time); // 03.03
     };
     void Clear()
     {
@@ -217,6 +223,8 @@ public:
     void discover_vertex(vertex_des& v, const VChainGraph& G);
 
 //    geometrycentral::surface::VertexSet vertices;
+    std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh_;
+    std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry_;
 
     /** \brief length of average edge */
     double ave_edge_length;
@@ -226,17 +234,15 @@ private:
   // check to see if a vertex distance is within the desired distance band
   char is_inband(size_t vertex_index, double band);
 
-  // check to see if a particular index is NOT in the vector
-  char notInVectorSizeT(std::vector<int> list, size_t index);
 
   // finds the normal at a vertex by doing a curve fit to its neighbors
-  void plane_fit(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, size_t vertex_index, Eigen::Vector3d& normal_vec);
+//  void plane_fit(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, size_t vertex_index, Eigen::Vector3d& normal_vec);
 
   // finds the averge face normal at this vertex
-  void face_normal(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, size_t vertex_index, Eigen::Vector3d& normal_vec);
+  void face_normal(size_t vertex_index, Eigen::Vector3d& normal_vec);
 
   // finds the face normal using only one face from this vertex
-  void one_face_normal(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, size_t vertex_index, Eigen::Vector3d& normal_vec);
+//  void one_face_normal(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh, size_t vertex_index, Eigen::Vector3d& normal_vec);
 
   // from one, list remove any matches form the other list
   void remove_matching_vertices(std::vector<int> &to_match, std::vector<int> &vertex_list);
@@ -278,6 +284,9 @@ public:
   /** \brief geometrycentral distance to from each source vertex to every vertex
    * dimensions: (num_source_vertices) * (num_vertices) */
   geometrycentral::surface::VertexData<double> dist_to_source_;
+  std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh_;
+  std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry_;
+  double time_;
 
   //  /** \brief the sources are the vertices set to a constant temp for distance computation */
   //  std::vector<int> S_;

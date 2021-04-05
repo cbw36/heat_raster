@@ -15,7 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   heat_msgs
   smooth_pose_traj
+  pcl_ros
 )
+find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
+
 
 find_package(VTK REQUIRED NO_MODULE)
 if(VTK_FOUND AND ("${VTK_VERSION}" VERSION_LESS 7.1))
@@ -34,6 +37,8 @@ catkin_package(
     heat_msgs
     roscpp
     smooth_pose_traj
+    pcl_ros
+    pcl
   DEPENDS
     VTK
 )
@@ -71,14 +76,24 @@ target_link_libraries(gc_heat_method
 target_compile_features(gc_heat_method PUBLIC cxx_std_11)
 
 
+add_executable(meshing_code
+  src/meshing_code.cpp
+  )
+
+target_link_libraries(meshing_code
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  )
+
+
 #############
 ## Install ##
 #############
-install(TARGETS  heat_surface_plan_server
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(TARGETS  heat_surface_plan_server
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

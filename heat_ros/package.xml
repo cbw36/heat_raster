@@ -12,6 +12,8 @@
   <depend>heat_msgs</depend>
   <depend>smooth_pose_traj</depend>
   <depend>geometry-central</depend>
+  <depend>pcl_ros</depend>
+  <depend>pcl</depend>
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
