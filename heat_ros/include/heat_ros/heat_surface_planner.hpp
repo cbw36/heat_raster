@@ -125,7 +125,9 @@ public:
    *  @output center The center of mass of this triangle
    *  @output area   The area of this triangle
    **/
-  bool getCellCentroidData(const shape_msgs::Mesh& mesh, const int id, Eigen::Vector3d& center, double& area);
+  bool getCellCentroidData(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                           std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
+                           const int id, Eigen::Vector3d& center, double& area);
 
   /** @brief find the cutting plane given the mesh and its raster angle
    *  @input mesh the mesh containing vertices and triangles
@@ -133,7 +135,9 @@ public:
    *  @output N the normal vector for the plane
    *  @output D the right hand side of the plane equation N_x X + N_y Y + N_z Z = D
    **/
-  bool getCuttingPlane(const shape_msgs::Mesh& mesh, const double raster_angle, Eigen::Vector3d& N, double& D);
+  bool getCuttingPlane(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                       std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
+                       const double raster_angle, Eigen::Vector3d& N, double& D);
 
   double estimateMeshTime(const shape_msgs::Mesh& mesh);
 

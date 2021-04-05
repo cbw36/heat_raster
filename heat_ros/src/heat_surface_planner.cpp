@@ -27,60 +27,6 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
   std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/bunny.obj"); //03.02
 
-  /*
-//    hmTriMeshInitialize(&surface_); //02.23
-
-  // convert Mesh to hmTriMesh //03.02
-//  surface_.nVertices = mesh.vertices.size(); //03.02
-//  surface_.nFaces = mesh.triangles.size(); //03.02
-
-  // allocate
-//  surface_.vertices = (double*)malloc(surface_.nVertices * 3 * sizeof(double)); //03.02
-//  surface_.texCoords = (double*)malloc(surface_.nVertices * 2 * sizeof(double)); //03.02
-//  surface_.faces = (size_t*)malloc(surface_.nFaces * 3 * sizeof(size_t));
-
-  // copy vertices and faces
-//  double* v = surface_.vertices; //03.02
-//  for (int i = 0; i < surface_.nVertices; i++)  // copy each vertex //03.02
-//  { //03.02
-//    v[0] = mesh.vertices[i].x; //03.02
-//    v[1] = mesh.vertices[i].y; //03.02
-//    v[2] = mesh.vertices[i].z; //03.02
-//    v += 3; //03.02
-//  }  // end copy each vertex //03.02
-
-//  size_t* f = surface_.faces; //03.02
-//  for (int i = 0; i < surface_.nFaces; i++)  // copy each triangle //03.02
-//  { //03.02
-//    f[0] = mesh.triangles[i].vertex_indices[0]; //03.02
-//    f[1] = mesh.triangles[i].vertex_indices[1]; //03.02
-//    f[2] = mesh.triangles[i].vertex_indices[2]; //03.02
-//    f += 3; //03.02
-//  }  // end copy each triangle //03.02
-//  distance_.surface = &surface_; //03.02
-
-//   set time for heat flow  //TODO WHAT IS THIS? 03.02
-//  hmTriDistanceEstimateTime(&distance_); //03.02
-
-//  if (smoothness_ > 0.0) //03.02
-//  { //03.02
-//    distance_.time *= smoothness_; //03.02
-//  } //03.02
-
-//   specify boundary conditions  //03.02
-//  if (boundaryConditions_ > 0.) //03.02
-//  { //03.02
-//    hmTriDistanceSetBoundaryConditions(&distance_, boundaryConditions_); //03.02
-//  } //03.02
-
-//   specify verbosity
-//  distance_.verbose = verbose_; //03.02
-
-//   compute distance
-//  hmTriDistanceBuild(&distance_); //03.02
-  */
-
-//  mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
   if (local_source_indices.size() == 0)
@@ -88,13 +34,16 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
     Eigen::Vector3d N;
     double D;
     std::cout << "config_.raster_rot_offset = " << config_.raster_rot_offset << "\n";
-    getCuttingPlane(mesh, config_.raster_rot_offset, N, D);
+    getCuttingPlane(mesh_, geometry_, config_.raster_rot_offset, N, D);
 
     // Create a new sources vector that contains all points within a small distance from this plane
     int num_source_verts = 0;
-    for (int i = 0; i < (int)mesh.vertices.size(); i++)
+    for (int i = 0; i < (int)mesh_->nVertices(); i++)
     {
-      double d = N.x() * mesh.vertices[i].x + N.y() * mesh.vertices[i].y + N.z() * mesh.vertices[i].z - D;
+      geometrycentral::surface::Vertex vec = mesh_->vertex(i);
+      geometrycentral::Vector3& pos = geometry_->inputVertexPositions[vec];
+
+      double d = N.x() * pos.x + N.y() * pos.y + N.z() * pos.z - D;
       if (fabs(d) < config_.raster_spacing / 7.0)
       {
         num_source_verts++;
@@ -120,16 +69,12 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
       }
     }  // end setting sources
   }
-
   std::cout << "num source indices = " << local_source_indices.size();
   std::cout << "local_source_indices \n";
   for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
       std::cout << *i << ' ';
 
-
-  geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_); //TODO can this go in the header?
-// calculate the distances
-//  hmTriDistanceUpdate(&mesh_);
+  geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_); //TODO can heat_solver be declared in the header?
   std::vector<geometrycentral::surface::Vertex> source_verts;
   for (int i=0; i<local_source_indices.size(); ++i){
     source_verts.push_back(mesh_->vertex(local_source_indices[i]));
@@ -137,47 +82,37 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
   geometrycentral::surface::VertexData<double> dist_to_source;
   dist_to_source = heat_solver.computeDistance(source_verts); //TODO seems to return wrong distance values
-  Eigen::Matrix<double, -1, 1> dist_to_source_vec = dist_to_source.toVector();
-//  ROS_INFO_STREAM("size = " << dist_to_source_vec.size() << ", cols = "<< dist_to_source_vec.cols() <<
-//                  ", rows = " << dist_to_source_vec.rows() << ", x=" << dist_to_source_vec.x() <<
-//                  ", y=" << dist_to_source_vec.y() << ", z=" << dist_to_source_vec.z() <<
-//                  ", w=" << dist_to_source_vec.w());
-//  ROS_INFO_STREAM("element 0: " << dist_to_source_vec[0]);
-
-  ROS_INFO_STREAM("sources size = " << source_verts.size());
-  ROS_INFO_STREAM("num rows = "<< dist_to_source.size());
+//  Eigen::Matrix<double, -1, 1> dist_to_source_vec = dist_to_source.toVector();
+  double max_dist_val = -999999999.9;
+  for (int i=0; i < dist_to_source.size(); i++){
+    if (dist_to_source[i] > max_dist_val){
+      max_dist_val = dist_to_source[i];
+    }
+  }
+  ROS_INFO_STREAM("MAX DIST VAL = " << max_dist_val);
 
   double time = estimateMeshTime(mesh);
-  hmTriHeatPaths THP(mesh_, config_.raster_spacing, dist_to_source, time);
-  THP.compute(mesh_, local_source_indices);
+  hmTriHeatPaths THP(mesh_, geometry_, dist_to_source, config_.raster_spacing, time);
+  THP.compute(local_source_indices);
 
-  ROS_INFO_STREAM("nedges = " << mesh_->nEdges() << ", halfedges = " << mesh_->nHalfedges());
+  for (int i = 0; i < (int)THP.pose_arrays_.size(); i++)
+  {
+    geometry_msgs::PoseArray PA;
+    for (int j = 0; j < (int)THP.pose_arrays_[i].size(); j++)
+    {
+      geometry_msgs::Pose P;
+      P.position.x = THP.pose_arrays_[i][j].x;
+      P.position.y = THP.pose_arrays_[i][j].y;
+      P.position.z = THP.pose_arrays_[i][j].z;
+      P.orientation.w = THP.pose_arrays_[i][j].qw;
+      P.orientation.x = THP.pose_arrays_[i][j].qx;
+      P.orientation.y = THP.pose_arrays_[i][j].qy;
+      P.orientation.z = THP.pose_arrays_[i][j].qz;
+      PA.poses.push_back(P);
+    }
+    paths.push_back(PA);
+  }
 
-/*
-//  for (int i = 0; i < (int)THP.pose_arrays_.size(); i++)
-//  {
-//    geometry_msgs::PoseArray PA;
-//    for (int j = 0; j < (int)THP.pose_arrays_[i].size(); j++)
-//    {
-//      geometry_msgs::Pose P;
-//      P.position.x = THP.pose_arrays_[i][j].x;
-//      P.position.y = THP.pose_arrays_[i][j].y;
-//      P.position.z = THP.pose_arrays_[i][j].z;
-//      P.orientation.w = THP.pose_arrays_[i][j].qw;
-//      P.orientation.x = THP.pose_arrays_[i][j].qx;
-//      P.orientation.y = THP.pose_arrays_[i][j].qy;
-//      P.orientation.z = THP.pose_arrays_[i][j].qz;
-//      PA.poses.push_back(P);
-//    }
-//    paths.push_back(PA);
-//  }
-
-  // deallocate data structures
-  // TODO there are known memory leaks fix them
-//  hmTriMeshDestroy(&surface_);
-//  hmTriDistanceDestroy(&distance_);
-//  hmContextDestroy(&context_);
-*/
 
 }  // end of plan_paths()
 
@@ -239,14 +174,21 @@ void HeatSurfacePlanner::normVector(double &norm, geometry_msgs::Point &vec){
   norm = sqrt((vec.x*vec.x) + (vec.y*vec.y) + (vec.z*vec.z));
 }
 
-bool HeatSurfacePlanner::getCellCentroidData(const shape_msgs::Mesh& mesh,
+bool HeatSurfacePlanner::getCellCentroidData(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                                             std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
                                              const int id,
                                              Eigen::Vector3d& center,
                                              double& area)
 {
-  geometry_msgs::Point pt1 = mesh.vertices[(mesh.triangles[id].vertex_indices[0])];
-  geometry_msgs::Point pt2 = mesh.vertices[(mesh.triangles[id].vertex_indices[1])];
-  geometry_msgs::Point pt3 = mesh.vertices[(mesh.triangles[id].vertex_indices[2])];
+  geometrycentral::surface::Face face = mesh->face(id);
+  std::vector<geometrycentral::Vector3> adj_verts;
+  for(geometrycentral::surface::Vertex v : face.adjacentVertices()) {
+    geometrycentral::Vector3 vec = geometry_->inputVertexPositions[v];
+    adj_verts.push_back(vec);
+  }
+  geometrycentral::Vector3 pt1 = adj_verts.at(0);
+  geometrycentral::Vector3 pt2 = adj_verts.at(1);
+  geometrycentral::Vector3 pt3 = adj_verts.at(2);
   Eigen::Vector3d va(pt1.x - pt2.x, pt1.y - pt2.y, pt1.z - pt2.z);
   Eigen::Vector3d vb(pt2.x - pt3.x, pt2.y - pt3.y, pt2.z - pt3.z);
   Eigen::Vector3d vc(pt3.x - pt1.x, pt3.y - pt1.y, pt3.z - pt1.z);
@@ -261,7 +203,8 @@ bool HeatSurfacePlanner::getCellCentroidData(const shape_msgs::Mesh& mesh,
   return (true);
 }  // end of getCellCentroidData()
 
-bool HeatSurfacePlanner::getCuttingPlane(const shape_msgs::Mesh& mesh,
+bool HeatSurfacePlanner::getCuttingPlane(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
+                                         std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
                                          const double raster_angle,
                                          Eigen::Vector3d& N,
                                          double& D)
@@ -272,11 +215,11 @@ bool HeatSurfacePlanner::getCuttingPlane(const shape_msgs::Mesh& mesh,
   double A;
   std::vector<Eigen::Vector3d> centers;
   std::vector<double> areas;
-  for (int i = 0; i < mesh.triangles.size(); i++)
+  for (int i = 0; i < mesh->nFaces(); i++)
   {
     Eigen::Vector3d Ci;
     double Ai;
-    getCellCentroidData(mesh, i, Ci, Ai);
+    getCellCentroidData(mesh, geometry, i, Ci, Ai);
     C += Ci * Ai;
     A += Ai;
     centers.push_back(Ci);
@@ -284,7 +227,7 @@ bool HeatSurfacePlanner::getCuttingPlane(const shape_msgs::Mesh& mesh,
   }
   C = C / A;
   Eigen::Matrix<double, 3, 3> Inertia;
-  for (int i = 0; i < mesh.triangles.size(); i++)
+  for (int i = 0; i < mesh->nFaces(); i++)
   {
     double xk = centers[i].x() - C.x();
     double yk = centers[i].y() - C.y();
