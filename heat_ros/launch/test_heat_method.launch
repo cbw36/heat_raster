@@ -1,0 +1,5 @@
+<launch>
+
+  <node name="gc_heat_method" pkg="heat_ros" type="gc_heat_method" output="screen" respawn="false" />
+
+</launch>
