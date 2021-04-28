@@ -25,7 +25,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
       std::cout << *i << ' ';
 
 
-  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/bunny.obj"); //03.02
+  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/planar_mesh.ply"); //03.02
 
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;

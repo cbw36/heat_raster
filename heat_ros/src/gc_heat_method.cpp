@@ -8,75 +8,82 @@
 #include <geometrycentral/surface/simple_polygon_mesh.h>
 #include "geometrycentral/surface/surface_mesh_factories.h"
 
+#include "ros/ros.h"
+
 using namespace geometrycentral;
 using namespace geometrycentral::surface;
 
 int main(int argc, char** argv) {
 
+    ros::init(argc, argv, "main");
+    ros::NodeHandle nh;
+    std::string filepath;
+    nh.getParam("/gc_heat_method/filepath", filepath);
+    ROS_INFO_STREAM(filepath);
+    int n = 257;
     // Load a general surface mesh from file
-//    std::unique_ptr<SurfaceMesh> mesh;
-//    std::unique_ptr<VertexPositionGeometry> geometry;
+    std::unique_ptr<SurfaceMesh> mesh;
+    std::unique_ptr<VertexPositionGeometry> geometry;
 
     // load the mesh, constructing connectivity & geometry
-//    std::tie(mesh, geometry) = readSurfaceMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/plane.ply");
-//    mesh->printStatistics();
-    std::cin.get();
-//    std::vector<Vector3> vertices;
-    Eigen::MatrixXd vMat(100,3);
-    Eigen::MatrixXi fMat(200, 3);
-
-    int n = 1000;
-////    SimplePolygonMesh mesh = SimplePolygonMesh();
-    for (int i=0; i<n; i++){
-      for (int j=0; j<n; j++){
-        vMat(i*n + j, 0) = i*0.001;
-        vMat(i*n + j, 1) = j*0.001;
-        vMat(i*n + j, 2) = 0.0;
-//        Vector3 v{(double)i, (double)j, 0};
-//        mesh.vertexCoordinates.push_back(v);
-      }
-    }
-//    std::cout << "rows = "<< vMat.rows() << " and cols = " << vMat.cols() << "\n";
-//    printf("done 1");
-
-    for (int i=0; i<n; i++){
-      for (int j=0; j<n; j++){
-        fMat(i*n + j, 0) = i*n + j;
-        fMat(i*n + j, 1) = i*n + j+1;
-        fMat(i*n + j, 2) = (i+1)*n + j;
-
-        fMat(i*n + j + 1, 0) = i*n + j+1;
-        fMat(i*n + j + 1, 1) = (i+1)*n + j;
-        fMat(i*n + j + 1, 2) = (i+1)*n + j+1;
-//        std::vector<size_t> triangle_1;
-//        triangle_1.push_back(i*n + j);
-//        triangle_1.push_back(i*n + j+1);
-//        triangle_1.push_back((i+1)*n + j);
-//        mesh.polygons.push_back(triangle_1);
-
-//        std::vector<size_t> triangle_2;
-//        triangle_2.push_back(i*n + j+1);
-//        triangle_2.push_back((i+1)*n + j);
-//        triangle_2.push_back((i+1)*n + j+1);
-//        mesh.polygons.push_back(triangle_2);
-        printf("line 2");
-
-      }
-    }
-//    geometrycentral::surface::Vertex v1 = mesh_->vertex(0);
-//    geometrycentral::Vector3& pos1 = geometry_->inputVertexPositions[v1];
-    printf("111111111111111111\n");
-    std::unique_ptr<SurfaceMesh> mesh;
-    printf("22222222222222222222\n\n");
-    std::unique_ptr<VertexPositionGeometry> geometry;
-    printf("3333333333333333333333333\n\n\n");
-    std::tie(mesh, geometry) = makeSurfaceMeshAndGeometry(vMat, fMat);
-//    std::tie(mesh, geometry) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/grid.ply"); //03.02
-    printf("4444444444444444444444444444\n");
-    HeatMethodDistanceSolver heatSolver(*geometry);
-
+    std::tie(mesh, geometry) = readSurfaceMesh(filepath);
     mesh->printStatistics();
 
+//    std::cin.get();
+////    std::vector<Vector3> vertices;
+//    Eigen::MatrixXd vMat(100,3);
+//    Eigen::MatrixXi fMat(200, 3);
+
+//////    SimplePolygonMesh mesh = SimplePolygonMesh();
+//    for (int i=0; i<n; i++){
+//      for (int j=0; j<n; j++){
+//        vMat(i*n + j, 0) = i*0.001;
+//        vMat(i*n + j, 1) = j*0.001;
+//        vMat(i*n + j, 2) = 0.0;
+////        Vector3 v{(double)i, (double)j, 0};
+////        mesh.vertexCoordinates.push_back(v);
+//      }
+//    }
+////    std::cout << "rows = "<< vMat.rows() << " and cols = " << vMat.cols() << "\n";
+////    printf("done 1");
+
+//    for (int i=0; i<n; i++){
+//      for (int j=0; j<n; j++){
+//        fMat(i*n + j, 0) = i*n + j;
+//        fMat(i*n + j, 1) = i*n + j+1;
+//        fMat(i*n + j, 2) = (i+1)*n + j;
+
+//        fMat(i*n + j + 1, 0) = i*n + j+1;
+//        fMat(i*n + j + 1, 1) = (i+1)*n + j;
+//        fMat(i*n + j + 1, 2) = (i+1)*n + j+1;
+////        std::vector<size_t> triangle_1;
+////        triangle_1.push_back(i*n + j);
+////        triangle_1.push_back(i*n + j+1);
+////        triangle_1.push_back((i+1)*n + j);
+////        mesh.polygons.push_back(triangle_1);
+
+////        std::vector<size_t> triangle_2;
+////        triangle_2.push_back(i*n + j+1);
+////        triangle_2.push_back((i+1)*n + j);
+////        triangle_2.push_back((i+1)*n + j+1);
+////        mesh.polygons.push_back(triangle_2);
+//        printf("line 2");
+
+//      }
+//    }
+////    geometrycentral::surface::Vertex v1 = mesh_->vertex(0);
+////    geometrycentral::Vector3& pos1 = geometry_->inputVertexPositions[v1];
+//    printf("111111111111111111\n");
+//    std::unique_ptr<SurfaceMesh> mesh;
+//    printf("22222222222222222222\n\n");
+//    std::unique_ptr<VertexPositionGeometry> geometry;
+//    printf("3333333333333333333333333\n\n\n");
+//    std::tie(mesh, geometry) = makeSurfaceMeshAndGeometry(vMat, fMat);
+////    std::tie(mesh, geometry) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/grid.ply"); //03.02
+//    printf("4444444444444444444444444444\n");
+//    mesh->printStatistics();
+
+    HeatMethodDistanceSolver heatSolver(*geometry);
     std::vector<Vertex> sourceVerts;
     for (int i=0; i<n;i++){
       sourceVerts.push_back(mesh->vertex(i));
