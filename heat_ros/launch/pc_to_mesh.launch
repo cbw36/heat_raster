@@ -1,0 +1,10 @@
+<launch>
+
+  <node name="pc_to_mesh" pkg="heat_ros" type="pc_to_mesh" output="screen" respawn="false" >
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/C130Blade.PLY" /-->
+    <param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/shiny_side1_bottom.ply" />
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/cloud_traclabs.ply" /-->
+
+  </node>
+
+</launch>

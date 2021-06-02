@@ -17,7 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   smooth_pose_traj
   pcl_ros
 )
-find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
+#find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
+find_package(PCL 1.9 REQUIRED)
 
 
 find_package(VTK REQUIRED NO_MODULE)
@@ -49,6 +50,7 @@ include_directories(include
   ${LAPACK_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
   )
 
 add_executable(heat_surface_plan_server
@@ -64,10 +66,9 @@ target_link_libraries(heat_surface_plan_server
 )
 target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
 
+
 add_executable(gc_heat_method
   src/gc_heat_method.cpp)
-
-
 target_link_libraries(gc_heat_method
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
@@ -76,10 +77,31 @@ target_link_libraries(gc_heat_method
 target_compile_features(gc_heat_method PUBLIC cxx_std_11)
 
 
+add_executable(gc_pointcloud
+  src/gc_pointcloud.cpp)
+target_link_libraries(gc_pointcloud
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+  ${PCL_LIBRARIES}
+)
+target_compile_features(gc_pointcloud PUBLIC cxx_std_11)
+
+
+add_executable(pc_to_mesh
+  src/pc_to_mesh.cpp)
+target_link_libraries(pc_to_mesh
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+  ${PCL_LIBRARIES}
+)
+target_compile_features(pc_to_mesh PUBLIC cxx_std_11)
+
+
 add_executable(meshing_code
   src/meshing_code.cpp
   )
-
 target_link_libraries(meshing_code
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}

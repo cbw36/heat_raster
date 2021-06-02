@@ -1,5 +1,6 @@
 <launch>
 
-  <node name="gc_heat_method" pkg="heat_ros" type="gc_heat_method" output="screen" respawn="false" />
-
+  <node name="gc_heat_method" pkg="heat_ros" type="gc_heat_method" output="screen" respawn="false" >
+    <param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/planar_mesh.ply" />
+  </node>
 </launch>
