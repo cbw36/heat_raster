@@ -25,7 +25,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
       std::cout << *i << ' ';
 
 
-  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/grinding_blades_ws/src/Part Meshes/planar_mesh.ply"); //03.02
+  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/planar_mesh3.ply"); //03.02
 
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
@@ -270,4 +270,10 @@ bool HeatSurfacePlanner::getCuttingPlane(std::shared_ptr<geometrycentral::surfac
     printf("Plane equation %6.3lfx %6.3lfy %6.3lfz = %6.3lf\n", N[0], N[1], N[2], D);
   return (true);
 }
+
+
+//void HeatSurfacePlanner::convertMesh(const shape_msgs::Mesh& mesh){
+
+//}
+
 }  // end of namespace heat

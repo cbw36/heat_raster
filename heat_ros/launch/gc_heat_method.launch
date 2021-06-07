@@ -1,0 +1,7 @@
+<launch>
+
+  <node name="gc_heat_method" pkg="heat_ros" type="gc_heat_method" output="screen" respawn="false" >
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/.ply" /-->
+    <param name="filepath" value="/home/cwolfe/3d_reduced_mesh.ply" />
+</node>
+</launch>

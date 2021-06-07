@@ -1,0 +1,13 @@
+<launch>
+
+  <node name="pcl_pc_to_mesh" pkg="heat_ros" type="pcl_pc_to_mesh" output="screen" respawn="false" >
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/C130Blade.PLY" /-->
+    <param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/shiny_side1_bottom.ply" />
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/cloud_traclabs.ply" /-->
+    <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/planar_cloud.ply" /-->
+    <!--param name="filepath" value="/home/cwolfe/3d_cloud.ply" /-->
+    <param name="rows" value="1544" />
+    <param name="cols" value="2064" />
+  </node>
+
+</launch>

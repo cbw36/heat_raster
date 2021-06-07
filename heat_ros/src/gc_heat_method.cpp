@@ -4,7 +4,7 @@
 #include "geometrycentral/utilities/vector3.h"
 
 #include "geometrycentral/surface/heat_method_distance.h"
-#include <heat_ros/heat_surface_planner.hpp>
+//#include <heat_ros/heat_surface_planner.hpp>
 #include <geometrycentral/surface/simple_polygon_mesh.h>
 #include "geometrycentral/surface/surface_mesh_factories.h"
 
@@ -19,9 +19,11 @@ int main(int argc, char** argv) {
     ros::NodeHandle nh;
     std::string filepath;
     nh.getParam("/gc_heat_method/filepath", filepath);
-    ROS_INFO_STREAM(filepath);
     int n = 257;
-    // Load a general surface mesh from file
+
+//  int n=5;
+//  std::string filepath = "/home/cwolfe/heat_method_ws/src/Part Meshes/planar_mesh3.ply";
+  // Load a general surface mesh from file
     std::unique_ptr<SurfaceMesh> mesh;
     std::unique_ptr<VertexPositionGeometry> geometry;
 

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 
 project(heat_ros)
+set(CMAKE_FIND_DEBUG_MODE 1)
 
 add_compile_options(-std=c++14)
 
@@ -8,7 +9,7 @@ find_package(geometry-central REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 ## Find catkin macros and libraries
-
+#set(${CMAKE_MODULE_PATH} "/home/cwolfe/geometry_central/geometry-central/cmake/FindSuiteSparse.cmake")
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   cmake_modules
@@ -16,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   heat_msgs
   smooth_pose_traj
   pcl_ros
+  visualization_msgs
+  geometric_shapes
 )
 find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
 
@@ -39,6 +42,8 @@ catkin_package(
     smooth_pose_traj
     pcl_ros
     pcl
+    visualization_msgs
+    geometric_shapes
   DEPENDS
     VTK
 )
@@ -56,7 +61,6 @@ add_executable(heat_surface_plan_server
   src/heat_surface_planner.cpp
   src/hm_heat_path.cpp
 )
-
 target_link_libraries(heat_surface_plan_server
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
@@ -66,8 +70,6 @@ target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
 
 add_executable(gc_heat_method
   src/gc_heat_method.cpp)
-
-
 target_link_libraries(gc_heat_method
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
@@ -79,11 +81,48 @@ target_compile_features(gc_heat_method PUBLIC cxx_std_11)
 add_executable(meshing_code
   src/meshing_code.cpp
   )
-
 target_link_libraries(meshing_code
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   )
+
+add_executable(pcl_pc_to_mesh
+  src/pcl_pc_to_mesh.cpp)
+target_link_libraries(pcl_pc_to_mesh
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+)
+target_compile_features(pcl_pc_to_mesh PUBLIC cxx_std_11)
+
+
+add_executable(gc_pc_to_mesh
+  src/gc_pc_to_mesh.cpp)
+target_link_libraries(gc_pc_to_mesh
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+)
+target_compile_features(gc_pc_to_mesh PUBLIC cxx_std_11)
+
+
+add_executable(pcl_pc_to_mesh_no_removal
+  src/pcl_pc_to_mesh_no_removal.cpp)
+target_link_libraries(pcl_pc_to_mesh_no_removal
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+)
+target_compile_features(pcl_pc_to_mesh_no_removal PUBLIC cxx_std_11)
+
+add_executable(create_planar_pc
+  src/create_planar_pc.cpp)
+target_link_libraries(create_planar_pc
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+  geometry-central::geometry-central
+)
+target_compile_features(create_planar_pc PUBLIC cxx_std_11)
 
 
 #############

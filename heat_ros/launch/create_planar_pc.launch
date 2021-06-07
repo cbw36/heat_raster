@@ -1,0 +1,4 @@
+<launch>
+
+  <node name="create_planar_pc" pkg="heat_ros" type="create_planar_pc" output="screen" respawn="false" />
+</launch>
