@@ -129,6 +129,8 @@ public:
    **/
   bool getCuttingPlane(const shape_msgs::Mesh& mesh, const double raster_angle, Eigen::Vector3d& N, double& D);
 
+  bool getBoundarySources(const shape_msgs::Mesh& mesh, std::vector<int>& source_indices, const size_t expected_size);
+
 public:
   ProcessPath path_;
   ProcessConfig config_;

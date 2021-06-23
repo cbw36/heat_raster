@@ -11,8 +11,9 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
                                    std::vector<geometry_msgs::PoseArray>& paths)
 {
   std::vector<int> local_source_indices;
-  for (int i = 0; i < (int)source_indices.size(); i++)
+  for (int i = 0; i < (int)source_indices.size(); i++){
     local_source_indices.push_back(source_indices[i]);
+  }
 
   hmTriMeshInitialize(&surface_);
 
@@ -69,24 +70,33 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   hmClearArrayDouble(distance_.isSource.values, nv, 0.);
   if (local_source_indices.size() == 0)
   {
-    Eigen::Vector3d N;
-    double D;
-    getCuttingPlane(mesh, config_.raster_rot_offset, N, D);
-
-    // Create a new sources vector that contains all points within a small distance from this plane
     int num_source_verts = 0;
-    for (int i = 0; i < (int)mesh.vertices.size(); i++)
-    {
-      double d = N.x() * mesh.vertices[i].x + N.y() * mesh.vertices[i].y + N.z() * mesh.vertices[i].z - D;
-      if (fabs(d) < config_.raster_spacing / 7.0)
-      {
+    for (int i = 0; i < (int)mesh.vertices.size(); i++){
+      if (mesh.vertices[i].y == 0){
+        local_source_indices.push_back(i);
         num_source_verts++;
         distance_.isSource.values[i] = 1.0;
-        local_source_indices.push_back(i);
       }
     }
-    if (DEBUG_CUT_AXIS)
-      printf("found %d source vertices\n", num_source_verts);
+    printf("found %d source vertices\n", num_source_verts);
+//    Eigen::Vector3d N;
+//    double D;
+//    getCuttingPlane(mesh, config_.raster_rot_offset, N, D);
+
+//    // Create a new sources vector that contains all points within a small distance from this plane
+//    int num_source_verts = 0;
+//    for (int i = 0; i < (int)mesh.vertices.size(); i++)
+//    {
+//      double d = N.x() * mesh.vertices[i].x + N.y() * mesh.vertices[i].y + N.z() * mesh.vertices[i].z - D;
+//      if (fabs(d) < config_.raster_spacing / 7.0)
+//      {
+//        num_source_verts++;
+//        distance_.isSource.values[i] = 1.0;
+//        local_source_indices.push_back(i);
+//      }
+//    }
+//    if (DEBUG_CUT_AXIS)
+//      printf("found %d source vertices\n", num_source_verts);
   }
   else
   {                                                        // use provided sources
@@ -104,7 +114,20 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
     }  // end setting sources
   }
   // calculate the distances
+  printf("\n source indices = ");
+  for (int i = 0; i < (int)local_source_indices.size(); i++){
+    printf(", %d", local_source_indices[i]);
+  }
+  printf("\n");
+
   hmTriDistanceUpdate(&distance_);
+  printf("distances to each row \n");
+  for (int i=0; i<1000; i++){
+    printf("\n row %d = ", i);
+    for (int j=150; j<170; j++){
+      printf(", %f", distance_.distance.values[i*1000 + j]);
+    }
+  }
   hmTriHeatPaths THP(&distance_, config_.raster_spacing);
 
   THP.compute(&distance_, local_source_indices);
@@ -221,5 +244,11 @@ bool HeatSurfacePlanner::getCuttingPlane(const shape_msgs::Mesh& mesh,
   if (DEBUG_CUT_AXIS)
     printf("Plane equation %6.3lfx %6.3lfy %6.3lfz = %6.3lf\n", N[0], N[1], N[2], D);
   return (true);
+}
+
+bool HeatSurfacePlanner::getBoundarySources(const shape_msgs::Mesh& mesh,
+                                            std::vector<int>& source_indices,
+                                            const size_t expected_size = 3){
+
 }
 }  // end of namespace heat

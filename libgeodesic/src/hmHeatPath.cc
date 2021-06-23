@@ -224,13 +224,14 @@ hmTriHeatPaths::hmTriHeatPaths(hmTriDistance* distance, double raster_spacing)
     printf("WARNING num_neg = %d\n", num_neg);
   }
   num_levels_ = (int)(max_distance_ / raster_spacing) + 1;
+//  num_levels_ = 1;
 
   inband_vertex_lists_ = (hmVectorSizeT*)malloc(num_levels_ * sizeof(hmVectorSizeT));
 
   vchainInitialize(&vcs_);
 
   double alt_eps = sqrt(distance->time) / 1.7;  // time is the average edge length squared, we want a portion of this
-  epsilon_ = raster_spacing / 7.5;
+  epsilon_ = raster_spacing / 28;
   if (alt_eps > epsilon_)
     epsilon_ = alt_eps;
   delta_ = raster_spacing;
@@ -316,6 +317,10 @@ char hmTriHeatPaths::is_inband(hmTriDistance* distance, size_t vertex_index, dou
   if ((distance->isSource.values[vertex_index] == 1.0) && (band == 0.0))
   {
     return (1);
+  }
+  if ((distance->isSource.values[vertex_index] != 1.0) && (band == 0))
+  {
+    return(0);
   }
   // check threshold on others
   if (distance->distance.values[vertex_index] >= band_min && distance->distance.values[vertex_index] < band_max)
