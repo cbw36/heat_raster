@@ -26,7 +26,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
 
   std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/planar_mesh3.ply"); //03.02
-
+  mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
   if (local_source_indices.size() == 0)

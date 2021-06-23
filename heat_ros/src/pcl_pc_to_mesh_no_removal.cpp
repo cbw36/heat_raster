@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
     std::string filepath;
     int rows, cols;
     nh.getParam("/pcl_pc_to_mesh_no_removal/filepath", filepath);
-    nh.getParam("/pcl_pc_to_mesh_no_removal/pc_to_mesh/rows", rows);
-    nh.getParam("/pcl_pc_to_mesh_no_removal/pc_to_mesh/cols", cols);
+    nh.getParam("/pcl_pc_to_mesh_no_removal/rows", rows);
+    nh.getParam("/pcl_pc_to_mesh_no_removal/cols", cols);
     ROS_INFO_STREAM(filepath);
 
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     mesh.polygons = polys;
     mesh.cloud = *cloud_blob;
 
-    std::string ply_filename("/home/cwolfe/pc_to_mesh_no_removal.ply");
+    std::string ply_filename("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/planar_cloud_69x188.ply");
     pcl::io::savePLYFile(ply_filename, mesh);
 
 }

@@ -61,45 +61,62 @@ int main(int argc, char** argv) {
 //    }
 
 
-    std::string filepath;
-    int rows, cols;
-    nh.getParam("/pcl_pc_to_mesh/filepath", filepath);
+    std::string in_path;
+    std::string out_path;
+    int rows, cols, sample_size;
+    nh.getParam("/pcl_pc_to_mesh/in_path", in_path);
+    nh.getParam("/pcl_pc_to_mesh/out_path", out_path);
     nh.getParam("/pcl_pc_to_mesh/rows", rows);
     nh.getParam("/pcl_pc_to_mesh/cols", cols);
-    ROS_INFO_STREAM(filepath);
+    nh.getParam("/pcl_pc_to_mesh/sample_size", sample_size);
+    ROS_INFO_STREAM(in_path);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PLYReader reader;
-    reader.read(filepath, *cloud);
+    reader.read(in_path, *cloud);
 
+    if (cloud->size() != rows * cols)
+    {
+      ROS_ERROR("cloud.size() != rows*cols");
+      return 1;
+    }
+
+    int reduced_rows = rows/sample_size;
+    int reduced_cols = cols/sample_size;
     pcl::PointCloud<pcl::PointXYZ>::Ptr reduced_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<int> ind_map;
 
     ROS_INFO_STREAM("number of points = " << cloud->size());
-
+    int index;
     int num_valid_pts = 0;
-    for (int i=0; i<cloud->size(); i++){
-      pcl::PointXYZ pt = cloud->at(i);
-//      ROS_INFO_STREAM("x=" << pt.x <  <", y="<<pt.y<<", z="<<pt.z);
-      if (pt.x!=0 && pt.y!=0 && pt.z!=0){
-        reduced_cloud->push_back(pt);
-        ind_map.push_back(num_valid_pts);
-        num_valid_pts ++;
-      }
-      else{
-        ind_map.push_back(-1);
+//    for (int i=0; i<cloud->size(); i++){
+    for (int i=0; i<reduced_rows; i++){
+      for (int j=0; j<reduced_cols ; j++){
+        index = i*cols*sample_size + j*sample_size;
+        pcl::PointXYZ pt = cloud->at(index);
+//        ROS_INFO_STREAM("x=" << pt.x <  <", y="<<pt.y<<", z="<<pt.z);
+        if (pt.x!=0 && pt.y!=0 && pt.z!=0){
+          pt.x /= 1000.0;
+          pt.y /= 1000.0;
+          pt.z /= 1000.0;
+          reduced_cloud->push_back(pt);
+          ind_map.push_back(num_valid_pts);
+          num_valid_pts ++;
+        }
+        else{
+          ind_map.push_back(-1);
+        }
       }
     }
 
     ROS_INFO_STREAM("FINISH VERTICES. Total num = " << num_valid_pts);
-    ROS_INFO_STREAM("cloud pt 1 = " << reduced_cloud->at(0));
     int num_triangles = 0;
     int num_discarded_triangles = 0;
-    for (int i=0; i<rows-1; i++){
-      for (int j=0; j<cols-1; j++){
-        int ind_1 = i*cols + j;
-        int ind_2 = (i+1)*cols + j;
-        int ind_3 = i*cols + j+1;
+    for (int i=0; i<reduced_rows-1; i++){
+      for (int j=0; j<reduced_cols-1; j++){
+        int ind_1 = i*reduced_cols + j;
+        int ind_2 = (i+1)*reduced_cols + j;
+        int ind_3 = i*reduced_cols + j+1;
         if ((ind_map.at(ind_1) != -1) && (ind_map.at(ind_2) != -1) && (ind_map.at(ind_3) != -1)){
           pcl::Vertices vertices;
           vertices.vertices.push_back(ind_map.at(ind_1));
@@ -112,9 +129,9 @@ int main(int argc, char** argv) {
           num_discarded_triangles++;
         }
 
-        int ind_4 = i*cols + j+1;
-        int ind_5 = (i+1)*cols + j;
-        int ind_6 = (i+1)*cols + j+1;
+        int ind_4 = i*reduced_cols + j+1;
+        int ind_5 = (i+1)*reduced_cols + j;
+        int ind_6 = (i+1)*reduced_cols + j+1;
         if ((ind_map.at(ind_4) != -1) && (ind_map.at(ind_5) != -1) && (ind_map.at(ind_6) != -1)){
           pcl::Vertices vertices;
           vertices.vertices.push_back(ind_map.at(ind_4));
@@ -129,8 +146,8 @@ int main(int argc, char** argv) {
       }
     }
 
-    pcl::PLYWriter writer;
-    writer.write("/home/cwolfe/blade_cloud.ply", *reduced_cloud);
+//    pcl::PLYWriter writer;
+//    writer.write("/home/cwolfe/heat_method_ws/src/Part Meshes/small_reduced_blade_cloud_06-08.ply", *reduced_cloud);
 
     ROS_INFO_STREAM("finish TRIANGLES. total num = " << num_triangles << ", num_discarded = " << num_discarded_triangles);
 
@@ -140,11 +157,8 @@ int main(int argc, char** argv) {
     mesh.polygons = polys;
     mesh.cloud = *cloud_blob;
 
-    std::string ply_filename("/home/cwolfe/blade_mesh.ply");
-    pcl::io::savePLYFile(ply_filename, mesh);
-
-    ROS_INFO_STREAM("REDUCED CLOUD SIZE = " << reduced_cloud->size());
-
+//    std::string ply_filename("/home/cwolfe/heat_method_ws/src/Part Meshes/small_reduced_blade_mesh_06-08.ply");
+    pcl::io::savePLYFile(out_path, mesh);
 
     ros::Publisher cloud_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("cloud", 1);
     reduced_cloud->header.frame_id = "map";
