@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     mesh.polygons = polys;
     mesh.cloud = *cloud_blob;
 
-    std::string ply_filename("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/planar_cloud_69x188.ply");
+    std::string ply_filename("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/planar_mesh_100x100.ply");
     pcl::io::savePLYFile(ply_filename, mesh);
 
 }

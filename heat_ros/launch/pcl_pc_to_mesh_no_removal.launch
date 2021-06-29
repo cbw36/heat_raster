@@ -5,9 +5,9 @@
     <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/shiny_side1_bottom.ply" /-->
     <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/cloud_traclabs.ply" /-->
     <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/planar_cloud.ply" /-->
-    <param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/clouds_to_convert/planar_cloud_69x188.ply" />
-    <param name="rows" value="69" />
-    <param name="cols" value="188" />
+    <param name="filepath" value="/home/cwolfe/planar_cloud_100x100.ply" />
+    <param name="rows" value="100" />
+    <param name="cols" value="100" />
   </node>
 
 </launch>

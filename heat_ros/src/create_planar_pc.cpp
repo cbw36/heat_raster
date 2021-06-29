@@ -23,12 +23,13 @@ int main(int argc, char** argv) {
 //    bool 2d = true;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    int n_rows = 69;
-    int n_cols = 188;
-    int x_dist = 1.3461;
-    int y_dist = 0.4846;
-    double x_del = x_dist/n_cols;
-    double y_del = y_dist/n_rows;
+    int n_rows = 100;
+    int n_cols = 100;
+    int x_dist = 1;
+    int y_dist = 1;
+    double x_del = x_dist/(double)n_cols;
+    double y_del = y_dist/(double)n_rows;
+    printf("xdel = %f, ydel = %f", x_del, y_del);
     for(int i=0;i<n_rows;i++){
       for(int j=0;j<n_cols;j++){
 //        if (errant_points && ((i*n + j)%7==0)){
@@ -54,14 +55,14 @@ int main(int argc, char** argv) {
     }
 
 
-//    for (int i=0; i<cloud->size(); i++){
-//      if (i%n==0){
-//        printf("\nrow #%d\n", i/n);
-//      }
-//      printf("%f", cloud->at(i).y);
-//    }
+    for (int i=0; i<cloud->size(); i++){
+      if (i%n_rows==0){
+        printf("\nrow #%d\n", i/n_rows);
+      }
+      printf("%f, %f\n", cloud->at(i).x, cloud->at(i).y);
+    }
 
     pcl::PLYWriter writer;
-    writer.write("/home/cwolfe/planar_cloud_69x188.ply", *cloud);
+    writer.write("/home/cwolfe/planar_cloud_100x100.ply", *cloud);
 
 }

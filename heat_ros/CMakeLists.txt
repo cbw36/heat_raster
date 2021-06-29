@@ -9,7 +9,7 @@ find_package(geometry-central REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 ## Find catkin macros and libraries
-#set(${CMAKE_MODULE_PATH} "/home/cwolfe/geometry_central/geometry-central/cmake/FindSuiteSparse.cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake") # look for stuff in the /cmake directory
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   cmake_modules

@@ -13,9 +13,13 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
                                    const std::vector<int>& source_indices,
                                    std::vector<geometry_msgs::PoseArray>& paths)
 {
+  int plane_size = 100;
   std::vector<int> local_source_indices;
-  for (int i = 0; i < (int)source_indices.size(); i++)
-    local_source_indices.push_back(source_indices[i]);
+//  for (int i = 0; i < (int)source_indices.size(); i++){
+  for (int i=0; i<plane_size; i++){
+//    local_source_indices.push_back(source_indices[i]);
+    local_source_indices.push_back(i);
+  }
 
   std::cout << "local_source_indices \n";
   for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
@@ -25,7 +29,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
       std::cout << *i << ' ';
 
 
-  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/planar_mesh3.ply"); //03.02
+  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/planar_mesh_100x100.ply"); //03.02
   mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
@@ -74,11 +78,14 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
       std::cout << *i << ' ';
 
+  ROS_INFO("call heat solver");
   geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_); //TODO can heat_solver be declared in the header?
+  ROS_INFO("end call heat solver");
   std::vector<geometrycentral::surface::Vertex> source_verts;
   for (int i=0; i<local_source_indices.size(); ++i){
     source_verts.push_back(mesh_->vertex(local_source_indices[i]));
   }
+  ROS_INFO("Transfer local sources to sources");
 
   geometrycentral::surface::VertexData<double> dist_to_source;
   dist_to_source = heat_solver.computeDistance(source_verts); //TODO seems to return wrong distance values
@@ -91,7 +98,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   }
   ROS_INFO_STREAM("MAX DIST VAL = " << max_dist_val);
 
-  double time = estimateMeshTime(mesh);
+  double time = estimateMeshTime(mesh); //TODO If change multiplier of time in gc, need to change here too 06.25
   hmTriHeatPaths THP(mesh_, geometry_, dist_to_source, config_.raster_spacing, time);
   THP.compute(local_source_indices);
 
@@ -116,6 +123,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
 }  // end of plan_paths()
 
+//TODO If change multiplier of time in gc, need to change here too 06.25
 double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
   size_t nFaces = mesh.triangles.size();;
 //  size_t* facesBegin = distance->surface->faces;

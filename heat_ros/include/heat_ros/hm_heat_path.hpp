@@ -207,7 +207,7 @@ public:
             double time) : mesh_(mesh), geometry_(geometry)
     {
 //      vertices = mesh->vertices();
-      ave_edge_length = sqrt(time); // 03.03
+      ave_edge_length = sqrt(time); // 03.03 TODO NOT TRUE WHEN CHANGE SCALING FACTOR OF TIME 06.25
     };
     void Clear()
     {
