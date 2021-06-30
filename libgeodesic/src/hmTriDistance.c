@@ -89,6 +89,7 @@ void hmTriDistanceEstimateTime(hmTriDistance* distance)
     nEdges += 3.;
   }
   meanEdgeLength /= nEdges;
+//  meanEdgeLength *= 12.0;
 
   /* set t to square of mean edge length */
   distance->time = hmSquare(meanEdgeLength);

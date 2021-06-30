@@ -10,9 +10,12 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
                                    const std::vector<int>& source_indices,
                                    std::vector<geometry_msgs::PoseArray>& paths)
 {
+  int plane_size = 1000;
   std::vector<int> local_source_indices;
-  for (int i = 0; i < (int)source_indices.size(); i++){
-    local_source_indices.push_back(source_indices[i]);
+//  for (int i = 0; i < (int)source_indices.size(); i++){
+  for (int i=0; i<plane_size; i++){
+//    local_source_indices.push_back(source_indices[i]);
+    local_source_indices.push_back(i);
   }
 
   hmTriMeshInitialize(&surface_);
@@ -122,10 +125,10 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
   hmTriDistanceUpdate(&distance_);
   printf("distances to each row \n");
-  for (int i=0; i<1000; i++){
+  for (int i=0; i<plane_size; i++){
     printf("\n row %d = ", i);
-    for (int j=150; j<170; j++){
-      printf(", %f", distance_.distance.values[i*1000 + j]);
+    for (int j=20; j<30; j++){
+      printf(", %f", distance_.distance.values[i*plane_size + j]);
     }
   }
   hmTriHeatPaths THP(&distance_, config_.raster_spacing);
