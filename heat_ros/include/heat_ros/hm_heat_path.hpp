@@ -120,6 +120,7 @@ public:
   /** \brief constructor */
   hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
                  std::shared_ptr<geometrycentral::surface::VertexPositionGeometry>,
+                 std::vector<int> source_indices,
                  geometrycentral::surface::VertexData<double> dist_to_source,
                  double raster_spacing, double time);
   //    hmTriHeatPaths(hmTriDistance *distance, int num_levels,  std::vector<int> S);
@@ -281,8 +282,11 @@ public:
   /** \brief poses at each vertex along a path */
   std::vector<std::vector<Pose>> pose_arrays_;
 
+  int num_face_norm_calls_ = 0;
+
   /** \brief geometrycentral distance to from each source vertex to every vertex
    * dimensions: (num_source_vertices) * (num_vertices) */
+  std::vector<int> source_indices_;
   geometrycentral::surface::VertexData<double> dist_to_source_;
   std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh_;
   std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry_;

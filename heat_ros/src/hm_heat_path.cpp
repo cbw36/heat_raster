@@ -43,6 +43,8 @@
 #include <heat_ros/hm_heat_path.hpp>
 #include "geometrycentral/utilities/vector3.h"
 
+#include <swri_profiler/profiler.h>
+
 
 
 //#define UDGCD_REDUCE_MATRIX
@@ -52,9 +54,9 @@
 #define DEBUG_VCHAIN 0         // print each vchain and info
 #define DEBUG_VCHAINS 1        // print number of vchains per band
 #define DEBUG_INBAND 1         // print each in band info
-#define DEBUG_VCHAIN_GRAPHS 0  // print vchain graph info verts and edges
+#define DEBUG_VCHAIN_GRAPHS 1  // print vchain graph info verts and edges
 #define DEBUG_SHORT_GRAPH 0    // indicate when a graph is very short
-#define DEBUG_DEPTH_FIRST 0    // debug the depth first search for paths
+#define DEBUG_DEPTH_FIRST 1    // debug the depth first search for paths
 #define DEBUG_REDUCE 0         // debug the depth first search for paths
 #define DEBUG_MATLAB 0         // output matlab files for debugging
 #define DEBUG_NORMALS 0        // computation of normals
@@ -84,9 +86,10 @@ std::map<int, size_t> hmTriHeatPaths::ivmap_;  // Inverse map between vertices i
 
 hmTriHeatPaths::hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
                                std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
+                               std::vector<int> source_indices,
                                geometrycentral::surface::VertexData<double> dist_to_source,
                                double raster_spacing, double time) :
-  mesh_(mesh), geometry_(geometry), dist_to_source_(dist_to_source), time_(time)
+  mesh_(mesh), geometry_(geometry), source_indices_(source_indices), dist_to_source_(dist_to_source), time_(time)
 {
   // find maximum distance in mesh, assume 0 is min distance, this may be incorrect, if mean is removed.
   Eigen::Matrix<double, -1, 1> dist_to_source_vec = dist_to_source.toVector();
@@ -113,7 +116,9 @@ hmTriHeatPaths::hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::Surface
   double alt_eps = sqrt(time) / 1.7;  // TODO time is the average edge length squared, we want a portion of this
 //  double alt_eps = 4.3; //TODO replace. look in hmTriDistance.c void hmTriDistanceEstimateTime(hmTriDistance* distance)
 //  double alt_eps = 0.016300; //TODO replace
-  epsilon_ = raster_spacing / 7.5;
+  epsilon_ = raster_spacing / 28;
+  //  epsilon_ = raster_spacing / 7.5;
+
   if (alt_eps > epsilon_)
     epsilon_ = alt_eps;
   delta_ = raster_spacing;
@@ -131,11 +136,12 @@ hmTriHeatPaths::hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::Surface
 
 char hmTriHeatPaths::is_inband(size_t vertex_index, double band)
 {
+  SWRI_PROFILE("is_inband");
   double band_min = band - epsilon_;
   double band_max = band + epsilon_;
 
   // return all source points if band = 0.0
-  if ((dist_to_source_[vertex_index] == 0.0) && (band == 0.0)) //TODO this would return non-source elements with distance=0.0. Is that okay?
+  if ((std::count(source_indices_.begin(), source_indices_.end(), vertex_index)) && (band == 0.0)) //TODO this would return non-source elements with distance=0.0. Is that okay?
                                                               //Could alternatively find if vertex_index is in sources
   {
     return (1);
@@ -187,6 +193,7 @@ char hmTriHeatPaths::extract_vchain(std::vector<int> &vertex_list,
                                     double band,
                                     std::vector<int> &vchain)
 {
+  SWRI_PROFILE("extract_vchain");
   if (vertex_list.size() == 0)
     return (0);
 
@@ -217,6 +224,8 @@ char hmTriHeatPaths::extract_vchain(std::vector<int> &vertex_list,
 
 void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_vec)
 {
+  SWRI_PROFILE("face_normal");
+  num_face_norm_calls_ ++;
   // find all faces containing this vertex
   std::vector<size_t> included_faces;
   for (size_t i = 0; i < mesh_->nFaces(); i++) //TODO unsure if this is right
@@ -273,6 +282,7 @@ void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_ve
 
 void hmTriHeatPaths::build_vchain_graph(std::vector<int> &vchain, hmTriHeatPaths::VChainGraph& G)
 {
+  SWRI_PROFILE("build_vchain_graph");
   int no_chain_neighbors_count = 0;
   IndexMap index_map = get(boost::vertex_index, G);
   boost::property_map<VChainGraph, boost::edge_weight_t>::type weight = boost::get(boost::edge_weight, G);
@@ -339,6 +349,7 @@ void hmTriHeatPaths::build_vchain_graph(std::vector<int> &vchain, hmTriHeatPaths
 
 void hmTriHeatPaths::compute_inband_verticies(const std::vector<int>& sources)
 {
+  SWRI_PROFILE("compute_inband_vertices");
   // add sources as inband_vertex_lists_[num_levels-1]
   std::vector<int> band_1;
   for (int i = 0; i < (int)sources.size(); i++){
@@ -376,6 +387,7 @@ void hmTriHeatPaths::compute_inband_verticies(const std::vector<int>& sources)
 
 void hmTriHeatPaths::compute_vchains()
 {
+  SWRI_PROFILE("compute_vchains");
   for (int i = 0; i < (int)num_levels_; i++)
   {
     int old_vchain_size = vcs_.size();
@@ -406,6 +418,7 @@ void hmTriHeatPaths::compute_vchains()
 
 void hmTriHeatPaths::compute_vchain_graphs()
 {
+  SWRI_PROFILE("compute_vchain_graphs");
   for (int i = 0; i < (int)vcs_.size(); i++)
   {
     VChainGraph G;
@@ -421,6 +434,7 @@ void hmTriHeatPaths::reduce_graph_exclude_near_verts(VChainGraph& G_in,
                                                      VChainGraph& G_out,
                                                      const std::vector<vertex_des>& V_e)
 {
+  SWRI_PROFILE("reduce_graph_exclude_near_verts");
   boost::property_map<VChainGraph, boost::edge_weight_t>::type weightmap = boost::get(boost::edge_weight, G_in);
   VChainGraph::edge_iterator ei, ee;
   IndexMap index_map = get(boost::vertex_index, G_in);
@@ -481,6 +495,7 @@ void hmTriHeatPaths::reduce_graph_exclude_near_verts(VChainGraph& G_in,
 
 std::vector<hmTriHeatPaths::vertex_des> hmTriHeatPaths::find_path(VChainGraph& G)
 {
+  SWRI_PROFILE("find_paths");
   std::vector<vertex_des> p_temp;  // path_list as a vector
 
   // do nothing if its a small graph
@@ -530,6 +545,7 @@ std::list<hmTriHeatPaths::vertex_des>::iterator hmTriHeatPaths::PathGen::find_cl
                                                                                             int v_index,
                                                                                             double& cd)
 {
+  SWRI_PROFILE("find_closest_point");
   std::list<vertex_des>::iterator closest_it;
   double d = vertex_distance(mesh_, geometry_, v_index, path_list_.front());
   cd = d;
@@ -592,6 +608,13 @@ void hmTriHeatPaths::PathGen::discover_vertex(vertex_des& v, const VChainGraph& 
 
 void hmTriHeatPaths::compute_depth_first_paths()
 {
+  SWRI_PROFILE("compute_depth_first_paths");
+  printf("ENTER COMPUTE DEPTH FIRST PATHS 00000000\n");
+  int tot_num_in_vert_seq = 0;
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    tot_num_in_vert_seq += vertex_sequences_.at(i).size();
+  }
+  printf("Number of vertex sequences = %d with total of %d vertices\n", vertex_sequences_.size(), tot_num_in_vert_seq);
   // for every vchain graph, create an equivalent graph Gs_[i] with the same edges, but re-indexed vertices to minimize
   // number of verts in G_reduced exclude any vertex in Gs_[i] that is near any other paths already found
   for (size_t i = 0; i < Gs_.size(); i++)
@@ -616,14 +639,20 @@ void hmTriHeatPaths::compute_depth_first_paths()
 
   if (DEBUG_DEPTH_FIRST)
   {
-    for (size_t i = 0; i < vertex_sequences_.size(); i++)
-    {
-      printf("vertex_sequences_[%ld] %ld vertices\n", i, vertex_sequences_[i].size());
+    int tot_num_in_vert_seq = 0;
+    for (int i=0; i<vertex_sequences_.size(); i++){
+      tot_num_in_vert_seq += vertex_sequences_.at(i).size();
     }
+    printf("Number of vertex sequences = %d with total of %d vertices\n", vertex_sequences_.size(), tot_num_in_vert_seq);
+//    for (size_t i = 0; i < vertex_sequences_.size(); i++)
+//    {
+//      printf("vertex_sequences_[%ld] %ld vertices\n", i, vertex_sequences_[i].size());
+//    }
   }
 }
 void hmTriHeatPaths::concatenate_paths(int path_i, int path_j, bool invert_j)
 {
+  SWRI_PROFILE("concatenate_paths");
   int s = (int)vertex_sequences_[path_j].size();
   if (!invert_j)
   {
@@ -643,23 +672,35 @@ void hmTriHeatPaths::concatenate_paths(int path_i, int path_j, bool invert_j)
 
 void hmTriHeatPaths::compute_pose_arrays()
 {
+  SWRI_PROFILE("compute_pose_arrays");
   // create a set of poses from the sequence by:
   // 1. Use surface normal for z_vec of pose
   // 2. Use direction to next in sequence as x_vec
   // 3. Use z_vec cross x_vec as y
   // 4. compute quaternion from 3x3 rotation defined by x_vec|y_vec|z_vec
   // 5. use most recent quat for last in sequence
+  printf("Enter compute_pose_arrays\n");
   pose_arrays_.clear();
   int NV = mesh_->nVertices();
+  printf("NV = %d\n", NV);
+  int tot_num_in_vert_seq = 0;
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    tot_num_in_vert_seq += vertex_sequences_.at(i).size();
+  }
+  printf("Number of vertex sequences = %d with total of %d vertices\n", vertex_sequences_.size(), tot_num_in_vert_seq);
+  std::vector<std::vector<int>> index_occurences(vertex_sequences_.size());
   for (int i = 0; i < (int)vertex_sequences_.size(); i++)
   {
+    std::vector<int> cur_occurences(NV, 0);
     std::vector<Pose> Pose_array;
     Pose P;
+    printf("sequence # %d size = %d\n", i, vertex_sequences_[i].size());
     for (int j = 0; j < (int)vertex_sequences_[i].size() - 1; j++)
     {
       Eigen::Vector3d z_vec;
       double zv[3];
       int vj = vertex_sequences_[i][j];
+      cur_occurences.at(vj) ++;
       int vn = vertex_sequences_[i][j + 1];
       face_normal(vj, z_vec);  // most reliable
       if (DEBUG_QUAT)
@@ -719,6 +760,8 @@ void hmTriHeatPaths::compute_pose_arrays()
         printf("normalize of x failed for vertex %d in sequence %d\n", j, i);
       }
     }
+    index_occurences.at(i) = cur_occurences;
+
     if (vertex_sequences_[i].size() > 1)
     {
       // add last point in sequence repeating latest orientation
@@ -735,13 +778,32 @@ void hmTriHeatPaths::compute_pose_arrays()
       }
     }
   }  // end for each vertex sequence
+//  std::vector<int> mult_seq_occurences(NV, 0);
+//  for (int i=0; i<vertex_sequences_.size(); i++){
+//    for (int j=0; j<NV; j++){
+//      if (index_occurences.at(i).at(j) != 0){
+//        mult_seq_occurences.at(j) ++;
+//        printf("sequence %d vertex %d = %d\n", i, j, index_occurences.at(i).at(j));
+//      }
+//    }
+//  }
+//  for (int i=0; i<vertex_sequences_.size(); i++){
+//    if (mult_seq_occurences.at(i) > 1){
+//      printf("vertex %d is in %d sequences\n", i, mult_seq_occurences.at(i));
+//    }
+//  }
 }
 
 void hmTriHeatPaths::connect_paths()
 {
+  SWRI_PROFILE("connect_paths");
   printf("inside connect_paths!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
   std::vector<bool> marked_deleted;
-  printf("vertex_sequences.size() = %d\n", (int)vertex_sequences_.size());
+  int tot_num_in_vert_seq = 0;
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    tot_num_in_vert_seq += vertex_sequences_.at(i).size();
+  }
+  printf("vertex_sequences.size() = %d with a total of %d verts\n", (int)vertex_sequences_.size(), tot_num_in_vert_seq);
 
   //TODO All marked_deleted are false!
   for (int i = 0; i < (int)vertex_sequences_.size(); i++)
@@ -819,14 +881,17 @@ void hmTriHeatPaths::compute(const std::vector<int>& source_indices)
   printf("finish compute_vchains\n");
   if (DEBUG_VCHAINS)
   {
+    int tot_vert_in_vchains = 0;
     for (int i = 0; i < vcs_.size(); i++)
     {
-      printf("chain %d has %ld vertices\n", i, vcs_.at(i).size());
+      tot_vert_in_vchains += vcs_.at(i).size();
+//      printf("chain %d has %ld vertices\n", i, vcs_.at(i).size());
     }
+    printf("total number of vertices in all vchains is %ld \n", tot_vert_in_vchains);
   }
   compute_vchain_graphs();
   printf("finish compute_vchain_graphs\n");
-  compute_depth_first_paths(); //makes vertex_sequences have 271 items
+  compute_depth_first_paths(); //TODO This takes way too long. makes vertex_sequences have 271 items
   printf("finish compute_depth_first_paths\n");
   connect_paths(); //prunes vertex sequences to 39 items
   printf("finish connect_paths\n");
@@ -834,7 +899,8 @@ void hmTriHeatPaths::compute(const std::vector<int>& source_indices)
 //    add_sources_to_sequences(distance, source_indices);// don't rely on the 0-band, it does not include these vertices
 //    and will be noisy
 //  */
-  compute_pose_arrays();
+  compute_pose_arrays(); //TODO this takes way too long
+  printf("num face normal calls = %d\n", num_face_norm_calls_);
   printf("FINISHED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
 //  if (DEBUG_MATLAB)
 //    octave_output_paths("paths.m", distance);

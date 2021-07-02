@@ -16,6 +16,7 @@
   <depend>pcl</depend>
   <depend>visualization_msgs</depend>
   <depend>geometric_shapes</depend>
+  <depend>swri_profiler</depend>
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>

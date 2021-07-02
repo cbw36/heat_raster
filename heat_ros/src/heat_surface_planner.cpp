@@ -13,28 +13,29 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
                                    const std::vector<int>& source_indices,
                                    std::vector<geometry_msgs::PoseArray>& paths)
 {
-  int plane_size = 100;
+//  int plane_size = 100;
   std::vector<int> local_source_indices;
-//  for (int i = 0; i < (int)source_indices.size(); i++){
-  for (int i=0; i<plane_size; i++){
-//    local_source_indices.push_back(source_indices[i]);
-    local_source_indices.push_back(i);
+  for (int i = 0; i < (int)source_indices.size(); i++){
+//  for (int i=0; i<plane_size; i++){
+    local_source_indices.push_back(source_indices[i]);
+//    local_source_indices.push_back(i);
   }
 
-  std::cout << "local_source_indices \n";
-  for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
-      std::cout << *i << ' ';
-  std::cout << "\n source_indices \n";
-  for (auto i = source_indices.begin(); i != source_indices.end(); ++i)
-      std::cout << *i << ' ';
+//  std::cout << "local_source_indices \n";
+//  for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
+//      std::cout << *i << ' ';
+//  std::cout << "\n source_indices \n";
+//  for (auto i = source_indices.begin(); i != source_indices.end(); ++i)
+//      std::cout << *i << ' ';
 
 
-  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/planar_mesh_100x100.ply"); //03.02
+  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/subsampled_mesh_06-08.ply"); //03.02
   mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
   if (local_source_indices.size() == 0)
   {
+    ROS_INFO("local_source_indices.size() == 0");
     Eigen::Vector3d N;
     double D;
     std::cout << "config_.raster_rot_offset = " << config_.raster_rot_offset << "\n";
@@ -60,6 +61,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   }
   else
   {                                                        // use provided sources
+    ROS_INFO("Use provided sources... local_source_indices.size() != 0");
     for (int i = 0; i < local_source_indices.size(); i++)  // set sources
     {
       int n = local_source_indices[i];
@@ -99,7 +101,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   ROS_INFO_STREAM("MAX DIST VAL = " << max_dist_val);
 
   double time = estimateMeshTime(mesh); //TODO If change multiplier of time in gc, need to change here too 06.25
-  hmTriHeatPaths THP(mesh_, geometry_, dist_to_source, config_.raster_spacing, time);
+  hmTriHeatPaths THP(mesh_, geometry_, local_source_indices, dist_to_source, config_.raster_spacing, time);
   THP.compute(local_source_indices);
 
   for (int i = 0; i < (int)THP.pose_arrays_.size(); i++)

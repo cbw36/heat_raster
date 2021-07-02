@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   visualization_msgs
   geometric_shapes
+  swri_profiler
 )
 find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
 
@@ -44,6 +45,7 @@ catkin_package(
     pcl
     visualization_msgs
     geometric_shapes
+    swri_profiler
   DEPENDS
     VTK
 )
