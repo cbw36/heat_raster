@@ -6,8 +6,8 @@
     <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/cloud_traclabs.ply" /-->
     <!--param name="filepath" value="/home/cwolfe/heat_method_ws/src/Part Meshes/planar_cloud.ply" /-->
     <!--param name="filepath" value="/home/cwolfe/cloud_with_errant_pts.ply" /-->
-    <param name="rows" value="2064" />
-    <param name="cols" value="1544 " />
+    <param name="rows" value="1544" />
+    <param name="cols" value="2064" />
   </node>
 
 </launch>

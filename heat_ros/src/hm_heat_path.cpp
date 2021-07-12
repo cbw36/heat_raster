@@ -889,7 +889,7 @@ void hmTriHeatPaths::compute(const std::vector<int>& source_indices)
     }
     printf("total number of vertices in all vchains is %ld \n", tot_vert_in_vchains);
   }
-  compute_vchain_graphs();
+  compute_vchain_graphs(); //TODO ERROR HERE. GS_ is enormous (45274 vertices in each graph)
   printf("finish compute_vchain_graphs\n");
   compute_depth_first_paths(); //TODO This takes way too long. makes vertex_sequences have 271 items
   printf("finish compute_depth_first_paths\n");

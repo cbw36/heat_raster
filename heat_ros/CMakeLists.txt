@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   geometric_shapes
   swri_profiler
+  cambr_msgs
 )
 find_package(PCL 1.9 REQUIRED COMPONENTS visualization)
 
@@ -46,6 +47,7 @@ catkin_package(
     visualization_msgs
     geometric_shapes
     swri_profiler
+    cambr_msgs
   DEPENDS
     VTK
 )
@@ -69,6 +71,18 @@ target_link_libraries(heat_surface_plan_server
   geometry-central::geometry-central
 )
 target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
+
+
+
+add_executable(heat_surface_plan_client
+  src/heat_surface_plan_client.cpp
+)
+target_link_libraries(heat_surface_plan_client
+  ${catkin_LIBRARIES}
+)
+target_compile_features(heat_surface_plan_client PUBLIC cxx_std_11)
+
+
 
 add_executable(gc_heat_method
   src/gc_heat_method.cpp)

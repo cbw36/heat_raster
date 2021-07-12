@@ -6,86 +6,92 @@
 #include <heat_ros/heat_surface_planner.hpp>
 #include <heat_ros/hm_heat_path.hpp>
 
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
+#include <pcl_ros/transforms.h>
+#include "pcl_ros/point_cloud.h"
+
+#include "geometrycentral/surface/manifold_surface_mesh.h"
+#include "geometrycentral/surface/meshio.h"
+#include "geometrycentral/surface/surface_mesh.h"
+#include "geometrycentral/utilities/vector3.h"
+#include "geometrycentral/surface/heat_method_distance.h"
+#include <heat_ros/heat_surface_planner.hpp>
+#include <geometrycentral/surface/simple_polygon_mesh.h>
+#include "geometrycentral/surface/surface_mesh_factories.h"
+
+
 #define DEBUG_CUT_AXIS 1
 namespace heat
 {
-void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
-                                   const std::vector<int>& source_indices,
-                                   std::vector<geometry_msgs::PoseArray>& paths)
+void HeatSurfacePlanner::planPaths(const sensor_msgs::PointCloud2& cloud,
+                                   std::vector<geometry_msgs::PoseArray>& paths,
+                                   heat::CloudConfig& cloud_config)
 {
-//  int plane_size = 100;
-  std::vector<int> local_source_indices;
-  for (int i = 0; i < (int)source_indices.size(); i++){
-//  for (int i=0; i<plane_size; i++){
-    local_source_indices.push_back(source_indices[i]);
-//    local_source_indices.push_back(i);
-  }
 
-//  std::cout << "local_source_indices \n";
-//  for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
-//      std::cout << *i << ' ';
-//  std::cout << "\n source_indices \n";
-//  for (auto i = source_indices.begin(); i != source_indices.end(); ++i)
-//      std::cout << *i << ' ';
-
-
-  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/subsampled_mesh_06-08.ply"); //03.02
+  bool use_hardcoded_sources = true;
+  std::vector<int> source_indices;
+//  std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/subsampled_mesh_06-08.ply"); //03.02
+  convertMesh(cloud, cloud_config);
   mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
-  if (local_source_indices.size() == 0)
+  if (!use_hardcoded_sources)
   {
-    ROS_INFO("local_source_indices.size() == 0");
-    Eigen::Vector3d N;
-    double D;
-    std::cout << "config_.raster_rot_offset = " << config_.raster_rot_offset << "\n";
-    getCuttingPlane(mesh_, geometry_, config_.raster_rot_offset, N, D);
-
-    // Create a new sources vector that contains all points within a small distance from this plane
-    int num_source_verts = 0;
-    for (int i = 0; i < (int)mesh_->nVertices(); i++)
-    {
-      geometrycentral::surface::Vertex vec = mesh_->vertex(i);
-      geometrycentral::Vector3& pos = geometry_->inputVertexPositions[vec];
-
-      double d = N.x() * pos.x + N.y() * pos.y + N.z() * pos.z - D;
-      if (fabs(d) < config_.raster_spacing / 7.0)
-      {
-        num_source_verts++;
-//        is_source[i] = 1.0;
-        local_source_indices.push_back(i);
-      }
-    }
-    if (DEBUG_CUT_AXIS)
-      printf("found %d source vertices\n", num_source_verts);
+    ROS_INFO("Generate using edge detection. not implemented yet");
+    //TODO IMPLEMENT EDGE DETECTION
   }
   else
   {                                                        // use provided sources
-    ROS_INFO("Use provided sources... local_source_indices.size() != 0");
-    for (int i = 0; i < local_source_indices.size(); i++)  // set sources
-    {
-      int n = local_source_indices[i];
-      if (n >= nv)
-      {
-        printf("Source index %d is set to %d but we only have %d vertices in mesh\n", i, n, nv);
-      }
-      else
-      {
-//        is_source[n] = 1.;
-      }
-    }  // end setting sources
+    ROS_INFO("Use harcoded sources");
+
+    source_indices = {38478, 38477, 38476, 38475, 38837, 39198, 39197, 39196, 39195, 39554,
+                      39553, 39552, 39910, 40265, 40264, 40263, 40262, 40261, 40260, 40259,
+                      40258, 40257, 40256, 40255, 40254, 40253, 40252, 40251, 40250, 40249,
+                      40248, 40247, 40246, 40245, 40244, 40243, 40242, 40241, 40592, 40591,
+                      40590, 40589, 40588, 40587, 40935, 40934, 40933, 40932, 41276, 41275,
+                      41274, 41273, 41272, 41271, 41270, 41609, 41608, 41940, 41939, 41938,
+                      41937, 41936, 41935, 41934, 42261, 42260, 42580, 42895, 42894, 42893,
+                      43199, 43198, 43197, 43196, 43195, 43194, 43193, 43192, 43191, 43190,
+                      43490, 43489, 43781, 43780, 43779, 44062, 44060, 44060, 44059, 44058,
+                      44057, 44056, 44055, 44054, 44053, 44052, 44051, 44318, 44317, 44316,
+                      44315, 44566, 44564, 44562, 44560, 44559, 44793, 44791, 44789, 44788,
+                      44786, 44784, 44782, 44780, 44779, 44778, 44777, 44776, 44775, 44774,
+                      44983, 44982, 44980, 44978, 44977, 44975, 44974, 44972, 44970, 44968,
+                      44966, 44965, 44964, 44963, 44962, 44961, 44960, 44959, 44958, 44957,
+                      44956, 44955, 44954, 44953, 44952, 44951, 44950, 44949, 44948, 44947,
+                      44946, 44945, 44944, 44943, 44942, 44941, 44940, 44939, 44938, 44937,
+                      44936, 44935, 44934, 44933, 44932, 44931, 44930, 44929, 44928, 44927,
+                      44926, 44925, 44924, 44923, 44922, 44921, 44921, 44920, 44919, 44918,
+                      44917, 44916, 44915, 44914, 44913, 44912, 44911, 44910, 44909, 44908,
+                      44907, 44906, 44905, 44904, 44903, 44902, 44901, 44900, 44899, 44898,
+                      44897, 44896, 44895, 44894, 44893, 44892, 44891, 44890, 44889, 44888,
+                      44887, 44886, 44885, 44884, 44883, 44882, 44881, 44880, 44879, 44878,
+                      44877, 44876, 44875, 44874, 44873, 44872, 44661, 44660, 44659, 44658,
+                      44657, 44656, 44655, 44654, 44653, 44652, 44651, 44650, 44649, 44648,
+                      44647, 44646, 44645, 44644, 44643, 44642, 44641, 44640, 44639, 44638,
+                      44637, 44636, 44635, 44634, 44633, 44632, 44631, 44630, 44629, 44628,
+                      44627, 44626, 44625, 44624, 44623, 44622, 44621, 44620, 44619, 44618,
+                      44617, 44616, 44615, 44614, 44613, 44612, 44611, 44610, 44609, 44608,
+                      44607, 44606, 44605, 44604, 44603, 44602, 44601, 44600, 44599, 44598,
+                      44597, 44596, 44595, 44594, 44593, 44593, 44592, 44591, 44590, 44589,
+                      44587, 44586, 44584, 44583, 44582, 44581, 44580, 44579, 44577, 44575,
+                      44573, 44571, 44570, 44334, 44332, 44331, 44329, 44328, 44326, 44073,
+                      44071, 44069, 44068, 43799, 43797, 43796, 43794, 43793, 43792, 43507};
   }
-  std::cout << "num source indices = " << local_source_indices.size();
+  std::cout << "num source indices = " << source_indices.size();
   std::cout << "local_source_indices \n";
-  for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
+  for (auto i = source_indices.begin(); i != source_indices.end(); ++i)
       std::cout << *i << ' ';
 
   ROS_INFO("call heat solver");
-  geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_); //TODO can heat_solver be declared in the header?
+  geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_, time_coeff); //TODO can heat_solver be declared in the header?
   ROS_INFO("end call heat solver");
   std::vector<geometrycentral::surface::Vertex> source_verts;
-  for (int i=0; i<local_source_indices.size(); ++i){
-    source_verts.push_back(mesh_->vertex(local_source_indices[i]));
+  for (int i=0; i<source_indices.size(); ++i){
+    source_verts.push_back(mesh_->vertex(source_indices[i]));
   }
   ROS_INFO("Transfer local sources to sources");
 
@@ -100,9 +106,9 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   }
   ROS_INFO_STREAM("MAX DIST VAL = " << max_dist_val);
 
-  double time = estimateMeshTime(mesh); //TODO If change multiplier of time in gc, need to change here too 06.25
-  hmTriHeatPaths THP(mesh_, geometry_, local_source_indices, dist_to_source, config_.raster_spacing, time);
-  THP.compute(local_source_indices);
+  double time = heat_solver.getTime(); //TODO If change multiplier of time in gc, need to change here too 06.25
+  hmTriHeatPaths THP(mesh_, geometry_, source_indices, dist_to_source, config_.offset_spacing, time);
+  THP.compute(source_indices);
 
   for (int i = 0; i < (int)THP.pose_arrays_.size(); i++)
   {
@@ -122,10 +128,91 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
     paths.push_back(PA);
   }
 
-
+  //TODO Return bool to indicate if succeeded or not
 }  // end of plan_paths()
 
-//TODO If change multiplier of time in gc, need to change here too 06.25
+
+void HeatSurfacePlanner::convertMesh(const sensor_msgs::PointCloud2& cloud,
+                                     heat::CloudConfig& cloud_config){
+  pcl::PointCloud<pcl::PointXYZ> cloud_;
+  pcl::fromROSMsg(cloud, cloud_);
+  Eigen::MatrixXd vMat(cloud_.size(), 3);
+  Eigen::MatrixXi fMat(cloud_.size()*2, 3);
+  std::vector<int> ind_map;
+  ROS_INFO_STREAM("cloud size = " << cloud_.size());
+
+  int reduced_rows = cloud_config.rows/cloud_config.sample_rate;
+  int reduced_cols = cloud_config.cols/cloud_config.sample_rate;
+
+  int index;
+  int num_valid_pts = 0;
+  for (int i=0; i<reduced_rows; i++){
+    for (int j=0; j<reduced_cols; j++){
+      index = i*cloud_config.cols*cloud_config.sample_rate + j*cloud_config.sample_rate;
+      pcl::PointXYZ pt = cloud_.at(index);
+      //      ROS_INFO_STREAM("x=" << pt.x <<", y="<<pt.y<<", z="<<pt.z);
+      if (pt.x!=0 && pt.y!=0 && pt.z!=0){
+        vMat(num_valid_pts, 0) = pt.x/cloud_config.scaling_factor;
+        vMat(num_valid_pts, 1) = pt.y/cloud_config.scaling_factor;
+        vMat(num_valid_pts, 2) = pt.z/cloud_config.scaling_factor;
+        ind_map.push_back(num_valid_pts);
+        num_valid_pts ++;
+      }
+      else{
+        ind_map.push_back(-1);
+      }
+    }
+  }
+
+  ROS_INFO_STREAM("FINISH VERTICES. Total num = " << num_valid_pts);
+  int num_triangles = 0;
+  int num_discarded_triangles = 0;
+  for (int i=0; i<reduced_rows-1; i++){
+    for (int j=0; j<reduced_cols-1; j++){
+      int ind_1 = i*reduced_cols + j;
+      int ind_2 = (i+1)*reduced_cols + j;
+      int ind_3 = i*reduced_cols + j+1;
+      if ((ind_map.at(ind_1) != -1) && (ind_map.at(ind_2) != -1) && (ind_map.at(ind_3) != -1)){
+        fMat(num_triangles, 0) = ind_map.at(ind_1);
+        fMat(num_triangles, 1) = ind_map.at(ind_2);
+        fMat(num_triangles, 2) = ind_map.at(ind_3);
+        num_triangles++;
+      }
+      else {
+        num_discarded_triangles++;
+      }
+
+      int ind_4 = i*reduced_cols + j+1;
+      int ind_5 = (i+1)*reduced_cols + j;
+      int ind_6 = (i+1)*reduced_cols + j+1;
+      if ((ind_map.at(ind_4) != -1) && (ind_map.at(ind_5) != -1) && (ind_map.at(ind_6) != -1)){
+        fMat(num_triangles, 0) = ind_map.at(ind_4);
+        fMat(num_triangles, 1) = ind_map.at(ind_5);
+        fMat(num_triangles, 2) = ind_map.at(ind_6);
+        num_triangles++;
+      }
+      else {
+        num_discarded_triangles++;
+      }
+    }
+  }
+
+  ROS_INFO_STREAM("finish TRIANGLES. total num = " << num_triangles << ", num_discarded = " << num_discarded_triangles);
+
+  Eigen::MatrixXd reduced_vMat(num_valid_pts, 3);
+  reduced_vMat = vMat.block(0, 0, num_valid_pts, 3);
+
+  Eigen::MatrixXi reduced_fMat(num_triangles, 3);
+  reduced_fMat = fMat.block(0, 0, num_triangles, 3);
+
+  ROS_INFO("CREATE MESH AND GEOMETRY");
+  std::tie(mesh_, geometry_) = geometrycentral::surface::makeSurfaceMeshAndGeometry(reduced_vMat, reduced_fMat);
+
+  //TODO return bool to indicate if succeeded or not
+}
+
+
+/*
 double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
   size_t nFaces = mesh.triangles.size();;
 //  size_t* facesBegin = distance->surface->faces;
@@ -138,12 +225,12 @@ double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
   double meanEdgeLength = 0.;
   double nEdges = 0.;
 
-  /* iterate over faces */
+  // iterate over faces
   int count = 0;
   for (auto f = mesh.triangles.begin(); f != mesh.triangles.end(); ++f)
   {
     count +=1;
-    /* get vertex coordinates p0, p1, p2 */
+    / get vertex coordinates p0, p1, p2
 //    ROS_ERROR_STREAM("face vertex 0: " << f->vertex_indices.at(0));
 //    ROS_ERROR_STREAM("face vertex 1: " << f->vertex_indices.at(1));
 //    ROS_ERROR_STREAM("face vertex 2: " << f->vertex_indices.at(2));
@@ -154,7 +241,7 @@ double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
 //    ROS_ERROR_STREAM("face vertex 0: " << p0);
 //    ROS_ERROR_STREAM("face vertex 1: " << p1);
 //    ROS_ERROR_STREAM("face vertex 2: " << p2);
-    /* add edge lengths to mean */
+    //add edge lengths to mean
     subtractVector(e01, p1, p0);
     subtractVector(e12, p2, p1);
     subtractVector(e20, p0, p2);
@@ -168,7 +255,7 @@ double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
   ROS_ERROR_STREAM("count = " << count);
   meanEdgeLength /= nEdges;
 
-  /* set t to square of mean edge length */
+  // set t to square of mean edge length
   double time = meanEdgeLength * meanEdgeLength;
   ROS_ERROR_STREAM("FINAL TIME = " << time);
   return time;
@@ -212,6 +299,7 @@ bool HeatSurfacePlanner::getCellCentroidData(std::shared_ptr<geometrycentral::su
   center.z() = (pt1.z + pt2.z + pt3.z) / 3.0;
   return (true);
 }  // end of getCellCentroidData()
+
 
 bool HeatSurfacePlanner::getCuttingPlane(std::shared_ptr<geometrycentral::surface::SurfaceMesh> mesh,
                                          std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry,
@@ -280,10 +368,7 @@ bool HeatSurfacePlanner::getCuttingPlane(std::shared_ptr<geometrycentral::surfac
     printf("Plane equation %6.3lfx %6.3lfy %6.3lfz = %6.3lf\n", N[0], N[1], N[2], D);
   return (true);
 }
+*/
 
-
-//void HeatSurfacePlanner::convertMesh(const shape_msgs::Mesh& mesh){
-
-//}
 
 }  // end of namespace heat

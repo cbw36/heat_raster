@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="client" pkg="heat_ros" type="heat_surface_plan_client" output="screen" respawn="false" />
+  <node name="server" pkg="heat_ros" type="heat_surface_plan_server" output="screen" respawn="false" />
+
+</launch>

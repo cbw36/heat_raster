@@ -3,15 +3,17 @@
 #include <boost/format.hpp>
 #include <mutex>
 #include <thread>
-#include <heat_msgs/GenerateHeatToolPathsAction.h>
+//#include <heat_msgs/GenerateHeatToolPathsAction.h>
+#include <cambr_msgs/PlanToolPathsAction.h>
 #include <heat_ros/heat_surface_planner.hpp>
 #include <smooth_pose_traj/SmoothPoseTrajectory.h>  // the service to smooth and sample a trajectory
+
 static const std::string GENERATE_TOOL_PATHS_ACTION = "generate_heat_tool_paths";
 static const std::string SMOOTH_TOOL_PATHS_SERVICE = "pose_trajectory_smoother";
 
 namespace heat_path_gen
 {
-using GenPathActionServer = actionlib::SimpleActionServer<heat_msgs::GenerateHeatToolPathsAction>;
+using GenPathActionServer = actionlib::SimpleActionServer<cambr_msgs::PlanToolPathsAction>;
 
 class HeatServer
 {
@@ -32,66 +34,164 @@ public:
 
 protected:
   /** goal has:
-   *  HeatMeshNSource[] mesh_n_s which has both a mesh and a set of source vertices
-   *  HeatRasterGeneratorConfig[] path_configs
-   *  bool proceed_on_failure  (a currently unused parameter)
+   *  sensor_msgs/PointCloud2 cloud   # scan data of blade surface
+   *  geometry_msgs/Polygon[] rois    # regions to process
+   *  cambr_msgs/ToolPathConfig path_configs # The path configuration parameters for the surface.
    *  result has:
-   *  HeatToolPath[] tool_raster_paths
-   *  bool tool_path_validities        these indicate which if any of the paths provided are invalid. Not sure why an
-   *invalid path is returned?
+   *  geometry_msgs/PoseArray[] segments  # computed tool path segments
+   *  bool tool_path_validities    these indicate which if any of the paths provided are invalid. TODO include these in cambr_msgs?
    **/
   void runHeatPathGeneration(const GenPathActionServer::GoalConstPtr goal)
   {
     ROS_INFO("Starting heat path generation");
-    heat_msgs::GenerateHeatToolPathsResult result;
+    cambr_msgs::PlanToolPathsResult result;
     // result has:
-    // bool success
-    // HeatToolPath[] tool_raster_paths	# The resulting raster paths
-    //     geometry_msgs/PoseArray[] paths
-    // bool[] tool_path_validities		# True when the tool path in 'tool_raster_paths' with the same index is valid.
-
+    // bool success                     TODO add to cambr_msgs?
+    // geometry_msgs/PoseArray[] paths  # The resulting raster paths
+    // bool[] tool_path_validities		  # True when the tool path in 'segments' with the same index is valid.
+    std::vector<cambr_msgs::ToolPathConfig> heat_configs; //TODO removed because don't use when create path_gen?
+    heat::CloudConfig cloud_config;
     // start lock
     {
       std::lock_guard<std::mutex> lock(goal_process_mutex_);
 
       // validate data
-      if (goal->surface_meshes.empty())
+      if ((goal->cloud.height==0) && (goal->cloud.width==0))
       {
-        std::string err_msg = "No surfaces were received";
+        std::string err_msg = "No cloud was received";
         ROS_ERROR_STREAM(err_msg);
         as_.setAborted(result, err_msg);
         return;
       }
 
       // verify configs
-      std::vector<heat_msgs::HeatRasterGeneratorConfig> heat_configs;
-      if (goal->path_configs.empty())
-      {
-        ROS_WARN("Path configuration array is empty, using default values");
-        heat_configs.resize(goal->surface_meshes.size(), toHeatMsg(heat::HeatSurfacePlanner::getDefaultConfig()));
-      }
-      else
-      {
-        heat_configs.assign(goal->path_configs.begin(), goal->path_configs.end());
+
+      // if no rois then plan on whole blade
+      if (goal->rois.size() == 0){
+        ROS_INFO("No ROIs, plan on whole blade");
+        if (goal->path_configs.size() > 1){
+          std::string err_msg = "Path configuration array size > 1";
+          ROS_ERROR_STREAM(err_msg);
+          as_.setAborted(result, err_msg);
+        }
+        else if (goal->path_configs.size() == 0) {
+          ROS_WARN("Path configuration array is empty, using default values");
+          heat_configs.resize(1, toCambrMsg(heat::HeatSurfacePlanner::getDefaultConfig()));
+        }
+        else{
+          heat_configs.assign(goal->path_configs.begin(), goal->path_configs.end());
+        }
       }
 
-      // veryfy number of configs & surfaces match
-      if (heat_configs.size() != goal->surface_meshes.size())
+      else{
+        ROS_INFO_STREAM(goal->rois.size() << "ROIs, plan on each one and not the whole blade");
+        if (goal->path_configs.empty())
+        {
+          ROS_WARN("Path configuration array is empty, using default values");
+          heat_configs.resize(goal->rois.size(), toCambrMsg(heat::HeatSurfacePlanner::getDefaultConfig()));
+        }
+        else
+        {
+          heat_configs.assign(goal->path_configs.begin(), goal->path_configs.end());
+        }
+
+        // veryfy number of configs & surfaces match
+        if (heat_configs.size() != goal->rois.size())
+        {
+          std::string err_msg = "Number of rois and path configs size have unequal sizes";
+          ROS_ERROR_STREAM(err_msg);
+          as_.setAborted(result, err_msg);
+          return;
+        }
+      }
+
+      //verify cloud_config params
+      if (goal->cloud_config.rows < 1 || goal->cloud_config.cols < 1 ||
+          goal->cloud_config.sample_rate < 1 || goal->cloud_config.scaling_factor < 1.0){
+        ROS_WARN("Cloud config parameters not provided. Use default");
+        cloud_config = heat::HeatSurfacePlanner::getDefaultCloudConfig();
+      }
+      else{
+        cloud_config = toHeatCloudConfig(goal->cloud_config);
+      }
+
+    }  // end lock
+
+    // call planner on full surface
+    using ToolPath = std::vector<geometry_msgs::PoseArray>;
+    int num_toolpaths = std::max((int)goal->rois.size(), 1);
+    result.segments.resize(num_toolpaths);
+
+    {  // start lock
+      std::lock_guard<std::mutex> lock(goal_process_mutex_);
+      if (as_.isPreemptRequested())
       {
-        std::string err_msg = "Surface meshes and path configs array have unequal sizes";
-        ROS_ERROR_STREAM(err_msg);
-        as_.setAborted(result, err_msg);
-        return;
+        ROS_WARN("Canceling Tool Path Generation Request");
+//        break;
+        return; //TODO used to break here when it was iterating over all ROIs. Should we return instead?
       }
     }  // end lock
 
-    // call planner on each mesh & source list
-    const std::size_t num_meshes = goal->surface_meshes.size();
-    std::vector<bool> validities;
-    using ToolPath = std::vector<geometry_msgs::PoseArray>;
-    result.tool_path_validities.resize(num_meshes, false);
-    result.tool_raster_paths.resize(num_meshes);
-    for (std::size_t i = 0; i < goal->surface_meshes.size(); i++)  // for each mesh & source list
+    // plan heat paths
+    //TODO which config should we use for the full blade? For it to have its own, len(path_config) would have to equal (len(rois)+1)
+    heat::ProcessConfig config = toProcessConfig(heat_configs.at(0)); //TODO for now set full surface config to config(0)
+    heat::HeatSurfacePlanner path_gen(config);
+    std::vector<geometry_msgs::PoseArray> heat_tool_paths;
+    path_gen.planPaths(goal->cloud, heat_tool_paths,
+                       cloud_config);
+
+    // smooth and resample paths at perscribed point spacing
+    smooth_pose_traj::SmoothPoseTrajectory::Request smooth_req;
+    smooth_pose_traj::SmoothPoseTrajectory::Response smooth_res;
+    std::vector<geometry_msgs::PoseArray> smoothed_tool_paths;
+    smooth_req.point_spacing = config.run_density;
+    for (int j = 0; j < heat_tool_paths.size(); j++)
+    {
+      smooth_req.input_poses.poses.assign(heat_tool_paths[j].poses.begin(), heat_tool_paths[j].poses.end());
+      if (!path_smooth_client_.call(smooth_req, smooth_res))
+      {
+        ROS_ERROR("path_smooth_client call failed");
+      }
+      else
+      {
+        geometry_msgs::PoseArray PA;
+        PA.poses.assign(smooth_res.output_poses.poses.begin(), smooth_res.output_poses.poses.end());
+        smoothed_tool_paths.push_back(PA);
+      }
+    }  // end smooth and re-sampling
+
+    if (smoothed_tool_paths.size() > 0)
+    {
+      cambr_msgs::HeatToolPath trp;
+      for (int j = 0; j < smoothed_tool_paths.size(); j++)  // copy tool paths into the message for return
+      {
+        geometry_msgs::PoseArray path;
+        path.poses.assign(smoothed_tool_paths[j].poses.begin(), smoothed_tool_paths[j].poses.end());
+        trp.paths.push_back(path);
+      }
+
+      // need to fill in trp.header since its sent to the result, but with what??
+      if (goal->rois.size()==0){
+        result.segments[0] = move(trp);
+        result.tool_path_validities.at(0) = true;
+        ROS_INFO("Full surface processed with %ld paths", result.segments[0].paths.size());
+      }
+      else{
+        base_path_ = move(trp);
+      }
+
+    }  // end tool paths size was non-zero for this surface
+    else
+    {
+      ROS_ERROR("Path planning on full surface failed");
+      result.success = false;
+      return; // TODO should we return here?
+    }  // end tool path size was zero for this surface
+
+
+
+    //Process each ROI
+    for (std::size_t i = 0; i < goal->rois.size(); i++)  // for each roi
     {
       {  // start lock
         std::lock_guard<std::mutex> lock(goal_process_mutex_);
@@ -102,55 +202,22 @@ protected:
         }
       }  // end lock
 
-      // plan heat paths
-      heat::ProcessConfig config = toProcessConfig(goal->path_configs[i]);
-      heat::HeatSurfacePlanner path_gen(config);
-      std::vector<geometry_msgs::PoseArray> heat_tool_paths;
-      path_gen.planPaths(goal->surface_meshes[i], goal->sources[0].source_indices, heat_tool_paths);
-
-      // smooth and resample paths at perscribed point spacing
-      smooth_pose_traj::SmoothPoseTrajectory::Request smooth_req;
-      smooth_pose_traj::SmoothPoseTrajectory::Response smooth_res;
-      std::vector<geometry_msgs::PoseArray> smoothed_tool_paths;
-      smooth_req.point_spacing = config.point_spacing;
-      for (int j = 0; j < heat_tool_paths.size(); j++)
-      {
-        smooth_req.input_poses.poses.assign(heat_tool_paths[j].poses.begin(), heat_tool_paths[j].poses.end());
-        if (!path_smooth_client_.call(smooth_req, smooth_res))
-        {
-          ROS_ERROR("path_smooth_client call failed");
-        }
-        else
-        {
-          geometry_msgs::PoseArray PA;
-          PA.poses.assign(smooth_res.output_poses.poses.begin(), smooth_res.output_poses.poses.end());
-          smoothed_tool_paths.push_back(PA);
-        }
-      }  // end smooth and re-sampling
-
-      if (smoothed_tool_paths.size() > 0)
-      {
-        heat_msgs::HeatToolPath trp;
-        for (int j = 0; j < smoothed_tool_paths.size(); j++)  // copy tool paths into the message for return
-        {
-          geometry_msgs::PoseArray path;
-          path.poses.assign(smoothed_tool_paths[j].poses.begin(), smoothed_tool_paths[j].poses.end());
-          trp.paths.push_back(path);
-        }
-        // need to fill in trp.header since its sent to the result, but with what??
-        result.tool_raster_paths[i] = move(trp);
+      cambr_msgs::HeatToolPath roi_path;
+      if (cropPath(goal->cloud, goal->rois[i], roi_path)){
         result.tool_path_validities[i] = true;
-        ROS_INFO("Surface %ld processed with %ld paths", i, result.tool_raster_paths[i].paths.size());
-      }  // end tool paths size was non-zero for this surface
-      else
-      {
+        result.segments[i] = move(roi_path);
+        ROS_INFO("Surface %ld processed with %ld paths", i, result.segments[i].paths.size());
+      }
+      else{
         ROS_ERROR("Path planning on surface %ld failed", i);
         if (!goal->proceed_on_failure)
-        {
           break;
-        }
-      }  // end tool path size was zero for this surface
-    }    // end for each surface
+      }
+
+    } //end for each roi
+
+
+
 
     // if any paths are invalid report failure in result
     result.success = std::any_of(
@@ -162,14 +229,14 @@ protected:
 
       if (result.success)
       {
-        ROS_INFO("Heat method generated result for %ld meshes", result.tool_raster_paths.size());
-        for (size_t jj = 0; jj < result.tool_raster_paths.size(); jj++)
+        ROS_INFO("Heat method generated result for %ld meshes", result.segments.size());
+        for (size_t jj = 0; jj < result.segments.size(); jj++)
         {
-          ROS_INFO("Mesh %ld has %ld paths", jj, result.tool_raster_paths[jj].paths.size());
-          for (size_t kk = 0; kk < result.tool_raster_paths[jj].paths.size(); kk++)
+          ROS_INFO("Mesh %ld has %ld paths", jj, result.segments[jj].paths.size());
+          for (size_t kk = 0; kk < result.segments[jj].paths.size(); kk++)
           {
             ROS_INFO(
-                "Mesh %ld path %ld has %ld waypoints", jj, kk, result.tool_raster_paths[jj].paths[kk].poses.size());
+                "Mesh %ld path %ld has %ld waypoints", jj, kk, result.segments[jj].paths[kk].poses.size());
           }
         }
 
@@ -199,7 +266,7 @@ protected:
       {
         std::string err_msg = "Goal ptr received is invalid";
         ROS_ERROR_STREAM(err_msg);
-        heat_msgs::GenerateHeatToolPathsResult result;
+        cambr_msgs::PlanToolPathsResult result;
         as_.setAborted(result, err_msg);
         return;
       }
@@ -214,36 +281,53 @@ protected:
     as_.setPreempted();
   }
 
-  heat_msgs::HeatRasterGeneratorConfig toHeatMsg(const heat::ProcessConfig& tool_config)
+
+  bool cropPath(const sensor_msgs::PointCloud2& cloud,
+                const geometry_msgs::Polygon& roi,
+                cambr_msgs::HeatToolPath& paths)
   {
-    heat_msgs::HeatRasterGeneratorConfig heat_config_msg;
-    heat_config_msg.point_spacing = tool_config.point_spacing;
-    heat_config_msg.raster_spacing = tool_config.raster_spacing;
-    heat_config_msg.tool_offset = tool_config.tool_offset;
+    if (base_path_.paths.size()==0){
+      ROS_ERROR("Tried to compute paths on ROIs before computing path on full surface");
+      return false;
+    }
+
+  }
+
+  cambr_msgs::ToolPathConfig toCambrMsg(const heat::ProcessConfig& tool_config)
+  {
+    cambr_msgs::ToolPathConfig heat_config_msg ;
+    heat_config_msg.run_density = tool_config.run_density;
+    heat_config_msg.offset_spacing = tool_config.offset_spacing;
+    heat_config_msg.height_offset = tool_config.height_offset;
     heat_config_msg.min_hole_size = tool_config.min_hole_size;
-    heat_config_msg.min_segment_size = tool_config.min_segment_size;
-    heat_config_msg.generate_extra_rasters = tool_config.generate_extra_rasters;
-    heat_config_msg.raster_rot_offset = tool_config.raster_rot_offset;
     return std::move(heat_config_msg);
   }
 
-  heat::ProcessConfig toProcessConfig(const heat_msgs::HeatRasterGeneratorConfig& heat_config_msg)
+  heat::ProcessConfig toProcessConfig(const cambr_msgs::ToolPathConfig& heat_config_msg)
   {
     heat::ProcessConfig tool_config;
-    tool_config.point_spacing = heat_config_msg.point_spacing;
-    tool_config.raster_spacing = heat_config_msg.raster_spacing;
-    tool_config.tool_offset = heat_config_msg.tool_offset;
+    tool_config.run_density = heat_config_msg.run_density;
+    tool_config.offset_spacing = heat_config_msg.offset_spacing;
+    tool_config.height_offset = heat_config_msg.height_offset;
     tool_config.min_hole_size = heat_config_msg.min_hole_size;
-    tool_config.min_segment_size = heat_config_msg.min_segment_size;
-    tool_config.generate_extra_rasters = heat_config_msg.generate_extra_rasters;
-    tool_config.raster_rot_offset = heat_config_msg.raster_rot_offset;
     return std::move(tool_config);
+  }
+
+  heat::CloudConfig toHeatCloudConfig(const cambr_msgs::CloudConfig in_config){
+    heat::CloudConfig out_config;
+    out_config.rows = in_config.rows;
+    out_config.cols = in_config.cols;
+    out_config.sample_rate = in_config.sample_rate;
+    out_config.scaling_factor = in_config.scaling_factor;
+    return out_config;
   }
 
   ros::NodeHandle nh_;
   GenPathActionServer as_;
   ros::ServiceClient path_smooth_client_;
   std::mutex goal_process_mutex_;
+  cambr_msgs::HeatToolPath base_path_; // TOOD use this or geometry_msgs::PoseArray
+
 };
 
 }  // namespace heat_path_gen
