@@ -1,0 +1,16 @@
+# Request
+std_msgs/Header         header  # provides ref frame for mesh and paths
+sensor_msgs/PointCloud2 cloud   # scan data of blade surface
+geometry_msgs/Polygon[] rois    # regions to process
+cambr_msgs/ToolPathConfig[] path_configs # The path configuration parameters for the surface.
+bool proceed_on_failure		         # When True, path generation will proceed to the next surface when planning fails on the current surface.
+cambr_msgs/CloudConfig cloud_config # parameters for converting the cloud to a mesh
+---
+# Result
+cambr_msgs/HeatToolPath[] segments  # computed tool path segments
+bool[] tool_path_validities		# True when the tool path in 'tool_raster_paths' with the same index is valid.
+bool success
+
+---
+# Feedback
+float32 progress  # percent complete (0-1) of planning process [OPTIONAL]
