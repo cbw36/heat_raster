@@ -12,6 +12,7 @@
   <depend>heat_msgs</depend>
   <depend>libgeodesic</depend>
   <depend>smooth_pose_traj</depend>
+  <depend>opp_gui</depend>
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>

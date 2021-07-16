@@ -36,22 +36,24 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <chrono>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/undirected_dfs.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <libgeodesic/hmHeatPath.hpp>
 
+
 //#define UDGCD_REDUCE_MATRIX
 //#include "udgcd.hpp"
 
-#define DEBUG_INFO 0           // print basic information
+#define DEBUG_INFO 1           // print basic information
 #define DEBUG_VCHAIN 0         // print each vchain and info
-#define DEBUG_VCHAINS 0        // print number of vchains per band
-#define DEBUG_INBAND 0         // print each in band info
-#define DEBUG_VCHAIN_GRAPHS 0  // print vchain graph info verts and edges
+#define DEBUG_VCHAINS 1        // print number of vchains per band
+#define DEBUG_INBAND 1         // print each in band info
+#define DEBUG_VCHAIN_GRAPHS 1  // print vchain graph info verts and edges
 #define DEBUG_SHORT_GRAPH 0    // indicate when a graph is very short
-#define DEBUG_DEPTH_FIRST 0    // debug the depth first search for paths
+#define DEBUG_DEPTH_FIRST 1    // debug the depth first search for paths
 #define DEBUG_REDUCE 0         // debug the depth first search for paths
 #define DEBUG_MATLAB 0         // output matlab files for debugging
 #define DEBUG_NORMALS 0        // computation of normals
@@ -466,6 +468,8 @@ void hmTriHeatPaths::plane_fit(hmTriDistance* distance, size_t vertex_index, Eig
 
 void hmTriHeatPaths::face_normal(hmTriDistance* distance, size_t vertex_index, Eigen::Vector3d& normal_vec)
 {
+  auto start = std::chrono::high_resolution_clock::now();
+  num_face_norm_calls_ ++;
   // find all faces containing this vertex
   std::vector<size_t> included_faces;
   size_t* faces = distance->surface->faces;
@@ -503,6 +507,10 @@ void hmTriHeatPaths::face_normal(hmTriDistance* distance, size_t vertex_index, E
     normal_vec = normal_vec + nv;
   }
   normal_vec.normalize();  // re-normalize should be same as divide by number of normals
+
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  std::cout << "Time taken by function: " << duration.count() << "\n";
 }
 
 void hmTriHeatPaths::one_face_normal(hmTriDistance* distance, size_t vertex_index, Eigen::Vector3d& normal_vec)
@@ -611,8 +619,11 @@ void hmTriHeatPaths::compute_inband_verticies(hmTriDistance* distance, const std
 {
   // add sources as inband_vertex_lists_[num_levels-1]
   hmVectorSizeTInitialize(&inband_vertex_lists_[0]);
+  //TODO REMOVED SOURCES BECAUSE THERE ARE ERRORS. ADD BACK! 07.01
   for (int i = 0; i < (int)sources.size(); i++)
     hmVectorSizeTPushBack(&inband_vertex_lists_[0], sources[i]);
+  if (DEBUG_INBAND)
+    printf("%d band %f has %ld vertices \n", 0, 0.000000, inband_vertex_lists_[0].size);
 
   // add all other bands
   for (int i = 1; i < (int)num_levels_; i++)
@@ -631,10 +642,10 @@ void hmTriHeatPaths::compute_inband_verticies(hmTriDistance* distance, const std
     if (DEBUG_INBAND)
     {
       printf("%d band %f has %ld vertices: [", i, band, inband_vertex_lists_[i].size);
-      for (int q = 0; q < (int)inband_vertex_lists_[i].size; q++)
-      {
-        printf("%ld ", inband_vertex_lists_[i].entries[q]);
-      }
+//      for (int q = 0; q < (int)inband_vertex_lists_[i].size; q++)
+//      {
+//        printf("%ld ", inband_vertex_lists_[i].entries[q]);
+//      }
     }
     if (DEBUG_INBAND)
       printf("]\n");
@@ -655,10 +666,10 @@ void hmTriHeatPaths::compute_vchains(hmTriDistance* distance)
       {
         if (DEBUG_VCHAINS)
         {
-          printf("vchain = [ ");
-          for (int q = 0; q < (int)S.size; q++)
-            printf("%ld ", S.entries[q]);
-          printf("]\n");
+//          printf("vchain = [ ");
+//          for (int q = 0; q < (int)S.size; q++)
+//            printf("%ld ", S.entries[q]);
+//          printf("]\n");
         }
         vchainPushBack(&vcs_, &S);
       }
@@ -668,8 +679,12 @@ void hmTriHeatPaths::compute_vchains(hmTriDistance* distance)
       }
       hmVectorSizeTDestroy(&S);
     }
-    if (DEBUG_VCHAINS)
-      printf("band = %lf to %lf has %ld vchain \n", band - epsilon_, band + epsilon_, vcs_.size - old_vchain_size);
+    if (DEBUG_VCHAINS){
+      printf("band = %lf to %lf has %ld vchain, with ", band - epsilon_, band + epsilon_, vcs_.size - old_vchain_size);
+      for (int i=old_vchain_size; i<vcs_.size; i++)
+        printf("%d, ", vcs_.entries[i].size);
+      printf(" vertices in each chain \n");
+    }
   }
 }
 
@@ -838,6 +853,12 @@ std::vector<hmTriHeatPaths::vertex_des> hmTriHeatPaths::find_path(hmTriDistance*
 
 void hmTriHeatPaths::compute_depth_first_paths(hmTriDistance* distance)
 {
+  printf("ENTER COMPUTE DEPTH FIRST PATHS 00000000\n");
+  int tot_num_in_vert_seq = 0;
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    tot_num_in_vert_seq += vertex_sequences_.at(i).size();
+  }
+  printf("Number of vertex sequences = %d with total of %d vertices\n", vertex_sequences_.size(), tot_num_in_vert_seq);
   // for every vchain graph, create an equivalent graph Gs_[i] with the same edges, but re-indexed vertices to minimize
   // number of verts in G_reduced exclude any vertex in Gs_[i] that is near any other paths already found
   for (size_t i = 0; i < Gs_.size(); i++)
@@ -862,10 +883,15 @@ void hmTriHeatPaths::compute_depth_first_paths(hmTriDistance* distance)
 
   if (DEBUG_DEPTH_FIRST)
   {
-    for (size_t i = 0; i < vertex_sequences_.size(); i++)
-    {
-      printf("vertex_sequences_[%ld] %ld vertices\n", i, vertex_sequences_[i].size());
+    int tot_num_in_vert_seq = 0;
+    for (int i=0; i<vertex_sequences_.size(); i++){
+      tot_num_in_vert_seq += vertex_sequences_.at(i).size();
     }
+    printf("Number of vertex sequences = %d with total of %d vertices\n", vertex_sequences_.size(), tot_num_in_vert_seq);
+//    for (size_t i = 0; i < vertex_sequences_.size(); i++)
+//    {
+//      printf("vertex_sequences_[%ld] %ld vertices\n", i, vertex_sequences_[i].size());
+//    }
   }
 }
 void hmTriHeatPaths::concatenate_paths(int path_i, int path_j, bool invert_j)
@@ -897,16 +923,23 @@ void hmTriHeatPaths::compute_pose_arrays(hmTriDistance* distance)
   // 5. use most recent quat for last in sequence
   pose_arrays_.clear();
   double* vertices = distance->surface->vertices;
+  printf("Number of vertex sequences = %d\n", vertex_sequences_.size());
+  std::vector<std::vector<int>> index_occurences(vertex_sequences_.size());
   int NV = distance->surface->nVertices;
   for (int i = 0; i < (int)vertex_sequences_.size(); i++)
   {
+    std::vector<int> cur_occurences(NV, 0);
     std::vector<Pose> Pose_array;
     Pose P;
+    printf("sequence # %d size = %d\n", i, vertex_sequences_[i].size());
     for (int j = 0; j < (int)vertex_sequences_[i].size() - 1; j++)
     {
       Eigen::Vector3d z_vec;
       double zv[3];
       int vj = vertex_sequences_[i][j];
+      cur_occurences.at(vj) ++;
+//      if (cur_occurences.at(vj) > 1)
+//        printf("sequence %d vertex %d = %d\n", i, vj, cur_occurences.at(vj));
       int vn = vertex_sequences_[i][j + 1];
       face_normal(distance, vj, z_vec);  // most reliable
       if (DEBUG_QUAT)
@@ -961,6 +994,8 @@ void hmTriHeatPaths::compute_pose_arrays(hmTriDistance* distance)
         printf("normalize of x failed for vertex %d in sequence %d\n", j, i);
       }
     }
+    index_occurences.at(i) = cur_occurences;
+
     if (vertex_sequences_[i].size() > 1)
     {
       // add last point in sequence repeating latest orientation
@@ -975,9 +1010,29 @@ void hmTriHeatPaths::compute_pose_arrays(hmTriDistance* distance)
       }
     }
   }  // end for each vertex sequence
+  std::vector<int> mult_seq_occurences(NV, 0);
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    for (int j=0; j<NV; j++){
+      if (index_occurences.at(i).at(i) != 0){
+        mult_seq_occurences.at(j) ++;
+        printf("sequence %d vertex %d = %d\n", i, j, index_occurences.at(i).at(j));
+      }
+    }
+  }
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    if (mult_seq_occurences.at(i) > 1){
+      printf("vertex %d is in %d sequences\n", i, mult_seq_occurences.at(i));
+    }
+  }
 }
 void hmTriHeatPaths::connect_paths(hmTriDistance* distance)
 {
+  printf("inside connect_paths!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  int tot_num_in_vert_seq = 0;
+  for (int i=0; i<vertex_sequences_.size(); i++){
+    tot_num_in_vert_seq += vertex_sequences_.at(i).size();
+  }
+  printf("vertex_sequences.size() = %d with a total of %d verts\n", (int)vertex_sequences_.size(), tot_num_in_vert_seq);
   std::vector<bool> marked_deleted;
   for (int i = 0; i < (int)vertex_sequences_.size(); i++)
   {
@@ -1051,11 +1106,15 @@ void hmTriHeatPaths::compute(hmTriDistance* distance, const std::vector<int>& so
   compute_vchains(distance);
   if (DEBUG_VCHAINS)
   {
+    int tot_vert_in_vchains = 0;
     for (int i = 0; i < vcs_.size; i++)
     {
-      printf("chain %d has %ld vertices\n", i, vcs_.entries[i].size);
+      tot_vert_in_vchains += vcs_.entries[i].size;
+//      printf("chain %d has %ld vertices\n", i, vcs_.entries[i].size);
     }
+    printf("total number of vertices in all vchains is %ld \n", tot_vert_in_vchains);
   }
+
   compute_vchain_graphs(distance);
   compute_depth_first_paths(distance);
   connect_paths(distance);
@@ -1064,6 +1123,7 @@ void hmTriHeatPaths::compute(hmTriDistance* distance, const std::vector<int>& so
     and will be noisy
   */
   compute_pose_arrays(distance);
+  printf("num face normal calls = %d\n", num_face_norm_calls_);
   if (DEBUG_MATLAB)
     octave_output_paths("paths.m", distance);
 }  // end of compute

@@ -1,0 +1,7 @@
+<launch>
+
+  <node name="old_client" pkg="heat_ros" type="heat_surface_plan_client" output="screen" respawn="false" />
+  <node name="old_server" pkg="heat_ros" type="heat_surface_plan_server" output="screen" respawn="false" />
+  <node name="old_pose_traj_smooth" pkg="smooth_pose_traj" type="smooth_pose_traj_srv" output="screen" respawn="true" />
+
+</launch>

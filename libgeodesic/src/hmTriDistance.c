@@ -93,6 +93,7 @@ void hmTriDistanceEstimateTime(hmTriDistance* distance)
 
   /* set t to square of mean edge length */
   distance->time = hmSquare(meanEdgeLength);
+  printf("time = %f", hmSquare(meanEdgeLength));
 }
 
 void hmTriDistanceSetBoundaryConditions(hmTriDistance* distance, double boundaryConditions)

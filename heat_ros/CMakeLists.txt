@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   heat_msgs
   smooth_pose_traj
+  opp_gui
+
 )
 
 find_package(VTK REQUIRED NO_MODULE)
@@ -34,6 +36,7 @@ catkin_package(
     heat_msgs
     roscpp
     smooth_pose_traj
+    opp_gui
   DEPENDS
     VTK
     libgeodesic
@@ -57,6 +60,16 @@ target_link_libraries(heat_surface_plan_server
   libgeodesic::libgeodesic
   libgeodesic::libgeodesic_cpp
 )
+
+add_executable(heat_surface_plan_client
+  src/heat_surface_plan_client.cpp
+)
+target_link_libraries(heat_surface_plan_client
+  ${catkin_LIBRARIES}
+  Qt5::Core
+)
+target_compile_features(heat_surface_plan_client PUBLIC cxx_std_11)
+
 
 #############
 ## Install ##

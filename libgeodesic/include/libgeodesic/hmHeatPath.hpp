@@ -269,6 +269,8 @@ public:
   /** \brief poses at each vertex along a path */
   std::vector<std::vector<Pose>> pose_arrays_;
 
+  int num_face_norm_calls_ = 0;
+
   //  /** \brief the sources are the vertices set to a constant temp for distance computation */
   //  hmVectorSizeT* S_;
 
