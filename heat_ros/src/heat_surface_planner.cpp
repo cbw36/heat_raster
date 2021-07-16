@@ -109,7 +109,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
 
   ROS_INFO("call heat solver");
   geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_); //TODO can heat_solver be declared in the header?
-  ROS_INFO("end call heat solver");
+  ROS_INFO_STREAM("end call heat solver. Time = " << heat_solver.getTime());
   std::vector<geometrycentral::surface::Vertex> source_verts;
   for (int i=0; i<local_source_indices.size(); ++i){
     source_verts.push_back(mesh_->vertex(local_source_indices[i]));
@@ -193,7 +193,7 @@ double HeatSurfacePlanner::estimateMeshTime(const shape_msgs::Mesh& mesh){
     meanEdgeLength += e01_norm + e12_norm + e20_norm;
     nEdges += 3.;
   }
-  ROS_ERROR_STREAM("count = " << count);
+  ROS_ERROR_STREAM("faces count = " << count);
   meanEdgeLength /= nEdges;
 
   /* set t to square of mean edge length */

@@ -1,6 +1,7 @@
 <launch>
 
-  <node name="client" pkg="heat_ros" type="heat_surface_plan_client" output="screen" respawn="false" />
-  <node name="server" pkg="heat_ros" type="heat_surface_plan_server" output="screen" respawn="false" />
-
+  <node name="new_client" pkg="heat_ros" type="heat_surface_plan_client" output="screen" respawn="false" />
+  <node name="new_server" pkg="heat_ros" type="heat_surface_plan_server" output="screen" respawn="false" />
+  <node name="new_pose_traj_smooth" pkg="smooth_pose_traj" type="smooth_pose_traj_srv" output="screen" respawn="true" />
+  <include file="$(find swri_profiler)/launch/profiler.launch" />
 </launch>

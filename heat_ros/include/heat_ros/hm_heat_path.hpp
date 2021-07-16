@@ -292,6 +292,9 @@ public:
   std::shared_ptr<geometrycentral::surface::VertexPositionGeometry> geometry_;
   double time_;
 
+  //Matrix with all faces that each vector is on. Each vector is a list of all the faces the vertex at the index is on
+  std::vector<std::vector<int>> vert_faces_;
+
   //  /** \brief the sources are the vertices set to a constant temp for distance computation */
   //  std::vector<int> S_;
 

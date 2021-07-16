@@ -17,7 +17,8 @@
   <depend>visualization_msgs</depend>
   <depend>geometric_shapes</depend>
   <depend>swri_profiler</depend>
-  
+  <depend>opp_gui</depend>
+
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>roscpp</build_depend>

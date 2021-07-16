@@ -36,6 +36,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <chrono>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/undirected_dfs.hpp>
@@ -123,6 +124,15 @@ hmTriHeatPaths::hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::Surface
     epsilon_ = alt_eps;
   delta_ = raster_spacing;
 
+// create matrix of faces incident on each vertex. TODO may not need this bc gc implements this
+//  for (int i=0; i<mesh_->nVertices(); i++){
+//    std::vector<int> cur_vec;
+//    vert_faces_.push_back(cur_vec);
+//  }
+
+//  for(geometrycentral::surface::Face f : mesh_->faces()) {
+//  }
+
   if (DEBUG_INFO)
   {
     printf("max_dist = %f\n", max_distance_);
@@ -145,6 +155,10 @@ char hmTriHeatPaths::is_inband(size_t vertex_index, double band)
                                                               //Could alternatively find if vertex_index is in sources
   {
     return (1);
+  }
+  //TODO returning 0 below for all nonsource points within the source band leads to 36 vchains for band 0 rather than 1
+  else if (band == 0.0) {
+    return (0);
   }
   // check threshold on others
   if (dist_to_source_[vertex_index] >= band_min && dist_to_source_[vertex_index] < band_max)
@@ -225,33 +239,38 @@ char hmTriHeatPaths::extract_vchain(std::vector<int> &vertex_list,
 void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_vec)
 {
   SWRI_PROFILE("face_normal");
+  auto start = std::chrono::high_resolution_clock::now();
   num_face_norm_calls_ ++;
   // find all faces containing this vertex
-  std::vector<size_t> included_faces;
-  for (size_t i = 0; i < mesh_->nFaces(); i++) //TODO unsure if this is right
-  {
-    geometrycentral::surface::Face face = mesh_->face(i);
-    bool vert_on_face = false;
-    for (geometrycentral::surface::Vertex v : face.adjacentVertices()){
-      if (v.getIndex() == vertex_index){
-        vert_on_face = true;
-      }
-    }
-    if (vert_on_face)
-    {
-      included_faces.push_back(i);
-    }
-  }
+  geometrycentral::surface::Vertex vert = mesh_->vertex(vertex_index);
+
+//  std::vector<size_t> included_faces;
+
+//  for (size_t i = 0; i < mesh_->nFaces(); i++) //TODO unsure if this is right
+//  {
+//    geometrycentral::surface::Face face = mesh_->face(i);
+//    bool vert_on_face = false;
+//    for (geometrycentral::surface::Vertex v : face.adjacentVertices()){
+//      if (v.getIndex() == vertex_index){
+//        vert_on_face = true;
+//      }
+//    }
+//    if (vert_on_face)
+//    {
+//      included_faces.push_back(i);
+//    }
+//  }
 
   // find average normal of all faces
   normal_vec(0) = 0.0;
   normal_vec(1) = 0.0;
   normal_vec(2) = 0.0;
 //  double* vertices = distance->surface->vertices;
-  for (int i = 0; i < (int)included_faces.size(); i++)
+//  for (int i = 0; i < (int)included_faces.size(); i++)
+  for (geometrycentral::surface::Face face : vert.adjacentFaces())
   {
 //    size_t* face = &faces[included_faces[i] * 3];
-    geometrycentral::surface::Face face = mesh_->face(i);
+//    geometrycentral::surface::Face face = mesh_->face(i);
 
     //TODO unsure if this approach is same as what Chris calculated and if the order of vertices is the same.
     //can instead use DenseMatrix<size_t> F which returns an FxD matrix
@@ -278,6 +297,9 @@ void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_ve
     normal_vec = normal_vec + nv;
   }
   normal_vec.normalize();  // re-normalize should be same as divide by number of normals
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  std::cout << "Time taken by function: " << duration.count() << "\n";
 }
 
 void hmTriHeatPaths::build_vchain_graph(std::vector<int> &vchain, hmTriHeatPaths::VChainGraph& G)
@@ -356,6 +378,8 @@ void hmTriHeatPaths::compute_inband_verticies(const std::vector<int>& sources)
     band_1.push_back(sources[i]);
   }
   inband_vertex_lists_.push_back(band_1);
+  if (DEBUG_INBAND)
+    printf("%d band %f has %ld vertices: \n", 0, 0.00000, band_1.size());
 
   // add all other bands
   for (int i = 1; i < (int)num_levels_; i++)
@@ -414,7 +438,7 @@ void hmTriHeatPaths::compute_vchains()
     if (DEBUG_VCHAINS){
       printf("band = %lf to %lf has %ld vchain, with ", band - epsilon_, band + epsilon_, vcs_.size() - old_vchain_size);
       for (int i=old_vchain_size; i<vcs_.size(); i++)
-        printf("%d", vcs_.at(i).size());
+        printf("%d, ", vcs_.at(i).size());
       printf(" vertices in each chain \n");
     }
   }
