@@ -14,25 +14,52 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
                                    std::vector<geometry_msgs::PoseArray>& paths)
 {
 //  int plane_size = 100;
+  std::vector<int> source_indices_hardcoded = {38478, 38477, 38476, 38475, 38837, 39198, 39197, 39196, 39195, 39554,
+                    39553, 39552, 39910, 40265, 40264, 40263, 40262, 40261, 40260, 40259,
+                    40258, 40257, 40256, 40255, 40254, 40253, 40252, 40251, 40250, 40249,
+                    40248, 40247, 40246, 40245, 40244, 40243, 40242, 40241, 40592, 40591,
+                    40590, 40589, 40588, 40587, 40935, 40934, 40933, 40932, 41276, 41275,
+                    41274, 41273, 41272, 41271, 41270, 41609, 41608, 41940, 41939, 41938,
+                    41937, 41936, 41935, 41934, 42261, 42260, 42580, 42895, 42894, 42893,
+                    43199, 43198, 43197, 43196, 43195, 43194, 43193, 43192, 43191, 43190,
+                    43490, 43489, 43781, 43780, 43779, 44062, 44060, 44060, 44059, 44058,
+                    44057, 44056, 44055, 44054, 44053, 44052, 44051, 44318, 44317, 44316,
+                    44315, 44566, 44564, 44562, 44560, 44559, 44793, 44791, 44789, 44788,
+                    44786, 44784, 44782, 44780, 44779, 44778, 44777, 44776, 44775, 44774,
+                    44983, 44982, 44980, 44978, 44977, 44975, 44974, 44972, 44970, 44968,
+                    44966, 44965, 44964, 44963, 44962, 44961, 44960, 44959, 44958, 44957,
+                    44956, 44955, 44954, 44953, 44952, 44951, 44950, 44949, 44948, 44947,
+                    44946, 44945, 44944, 44943, 44942, 44941, 44940, 44939, 44938, 44937,
+                    44936, 44935, 44934, 44933, 44932, 44931, 44930, 44929, 44928, 44927,
+                    44926, 44925, 44924, 44923, 44922, 44921, 44921, 44920, 44919, 44918,
+                    44917, 44916, 44915, 44914, 44913, 44912, 44911, 44910, 44909, 44908,
+                    44907, 44906, 44905, 44904, 44903, 44902, 44901, 44900, 44899, 44898,
+                    44897, 44896, 44895, 44894, 44893, 44892, 44891, 44890, 44889, 44888,
+                    44887, 44886, 44885, 44884, 44883, 44882, 44881, 44880, 44879, 44878,
+                    44877, 44876, 44875, 44874, 44873, 44872, 44661, 44660, 44659, 44658,
+                    44657, 44656, 44655, 44654, 44653, 44652, 44651, 44650, 44649, 44648,
+                    44647, 44646, 44645, 44644, 44643, 44642, 44641, 44640, 44639, 44638,
+                    44637, 44636, 44635, 44634, 44633, 44632, 44631, 44630, 44629, 44628,
+                    44627, 44626, 44625, 44624, 44623, 44622, 44621, 44620, 44619, 44618,
+                    44617, 44616, 44615, 44614, 44613, 44612, 44611, 44610, 44609, 44608,
+                    44607, 44606, 44605, 44604, 44603, 44602, 44601, 44600, 44599, 44598,
+                    44597, 44596, 44595, 44594, 44593, 44593, 44592, 44591, 44590, 44589,
+                    44587, 44586, 44584, 44583, 44582, 44581, 44580, 44579, 44577, 44575,
+                    44573, 44571, 44570, 44334, 44332, 44331, 44329, 44328, 44326, 44073,
+                    44071, 44069, 44068, 43799, 43797, 43796, 43794, 43793, 43792, 43507};
+
   std::vector<int> local_source_indices;
-  for (int i = 0; i < (int)source_indices.size(); i++){
+  for (int i = 0; i < (int)source_indices_hardcoded.size(); i++){
 //  for (int i=0; i<plane_size; i++){
-    local_source_indices.push_back(source_indices[i]);
+    local_source_indices.push_back(source_indices_hardcoded[i]);
 //    local_source_indices.push_back(i);
   }
-
-//  std::cout << "local_source_indices \n";
-//  for (auto i = local_source_indices.begin(); i != local_source_indices.end(); ++i)
-//      std::cout << *i << ' ';
-//  std::cout << "\n source_indices \n";
-//  for (auto i = source_indices.begin(); i != source_indices.end(); ++i)
-//      std::cout << *i << ' ';
-
 
   std::tie(mesh_, geometry_) = geometrycentral::surface::loadMesh("/home/cwolfe/heat_method_ws/src/Part Meshes/meshes_from_clouds/subsampled_mesh_06-08.ply"); //03.02
   mesh_->printStatistics();
   int nv = mesh_->nVertices();
   geometrycentral::surface::VertexData<double> is_source;
+
   if (local_source_indices.size() == 0)
   {
     ROS_INFO("local_source_indices.size() == 0");
@@ -101,6 +128,7 @@ void HeatSurfacePlanner::planPaths(const shape_msgs::Mesh& mesh,
   ROS_INFO_STREAM("MAX DIST VAL = " << max_dist_val);
 
   double time = estimateMeshTime(mesh); //TODO If change multiplier of time in gc, need to change here too 06.25
+  ROS_ERROR_STREAM("time = " << time);
   hmTriHeatPaths THP(mesh_, geometry_, local_source_indices, dist_to_source, config_.raster_spacing, time);
   THP.compute(local_source_indices);
 

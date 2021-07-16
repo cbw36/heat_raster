@@ -411,8 +411,12 @@ void hmTriHeatPaths::compute_vchains()
         printf("could not extract vchain\n");
       }
     }
-    if (DEBUG_VCHAINS)
-      printf("band = %lf to %lf has %ld vchain \n", band - epsilon_, band + epsilon_, vcs_.size() - old_vchain_size);
+    if (DEBUG_VCHAINS){
+      printf("band = %lf to %lf has %ld vchain, with ", band - epsilon_, band + epsilon_, vcs_.size() - old_vchain_size);
+      for (int i=old_vchain_size; i<vcs_.size(); i++)
+        printf("%d", vcs_.at(i).size());
+      printf(" vertices in each chain \n");
+    }
   }
 }
 

@@ -70,6 +70,16 @@ target_link_libraries(heat_surface_plan_server
 )
 target_compile_features(heat_surface_plan_server PUBLIC cxx_std_11)
 
+add_executable(heat_surface_plan_client
+  src/heat_surface_plan_client.cpp
+)
+target_link_libraries(heat_surface_plan_client
+  ${catkin_LIBRARIES}
+)
+target_compile_features(heat_surface_plan_client PUBLIC cxx_std_11)
+
+
+
 add_executable(gc_heat_method
   src/gc_heat_method.cpp)
 target_link_libraries(gc_heat_method
