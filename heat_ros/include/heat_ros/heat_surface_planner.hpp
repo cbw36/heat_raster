@@ -185,7 +185,7 @@ public:
   double smoothness_;
   double boundaryConditions_;
   char verbose_ = 0;
-  double time_coeff = 150;
+  double time_coeff = 1;
 
 };  // end class HeatSurfacePlanner
 

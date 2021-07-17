@@ -119,10 +119,9 @@ hmTriHeatPaths::hmTriHeatPaths(std::shared_ptr<geometrycentral::surface::Surface
   epsilon_ = raster_spacing / 28;
   //  epsilon_ = raster_spacing / 7.5;
 
-  //TODO removed on 07.16 because gc computing time here as 0.0026, but when we read in the mesh file
-  // time=0.000017. must be an issue from the conversion
-//  if (alt_eps > epsilon_)
-//    epsilon_ = alt_eps;
+  //If time_coeff in heat_solver > 1, then time is large, so delta may be larger than epsilon
+  if (alt_eps > epsilon_)
+    epsilon_ = alt_eps;
   delta_ = raster_spacing;
 
   if (DEBUG_INFO)
