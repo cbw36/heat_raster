@@ -88,7 +88,7 @@ void HeatSurfacePlanner::planPaths(const sensor_msgs::PointCloud2& cloud,
 
   ROS_INFO("call heat solver");
   geometrycentral::surface::HeatMethodDistanceSolver heat_solver(*geometry_, time_coeff); //TODO can heat_solver be declared in the header?
-  ROS_INFO("end call heat solver");
+  ROS_INFO_STREAM("end call heat solver. Time = " << heat_solver.getTime());
   std::vector<geometrycentral::surface::Vertex> source_verts;
   for (int i=0; i<source_indices.size(); ++i){
     source_verts.push_back(mesh_->vertex(source_indices[i]));

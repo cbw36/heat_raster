@@ -37,8 +37,20 @@ int main(int argc, char **argv)
   ROS_INFO("Client found server");
 
   cambr_msgs::PlanToolPathsGoal goal;
+//  heat::ProcessConfig process_config = heat::HeatSurfacePlanner::getDefaultConfig();
+  cambr_msgs::ToolPathConfig heat_config;
+  heat_config.run_density = 0.1;
+  heat_config.offset_spacing = 0.2;
+  heat_config.height_offset = 0.0;
+  heat_config.min_hole_size = 0.2;
+  heat_config.min_segment_size = 0.5;
+
+  std::vector<cambr_msgs::ToolPathConfig> configs;
+  configs.push_back(heat_config);
+
   //fill in goal
   goal.cloud = ros_cloud;
+  goal.path_configs = configs;
 
   client.sendGoal(goal);
   client.waitForResult(ros::Duration(5.0));

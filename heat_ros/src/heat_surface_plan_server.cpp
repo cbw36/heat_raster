@@ -121,6 +121,7 @@ protected:
     using ToolPath = std::vector<geometry_msgs::PoseArray>;
     int num_toolpaths = std::max((int)goal->rois.size(), 1);
     result.segments.resize(num_toolpaths);
+    result.tool_path_validities.resize(num_toolpaths);
 
     {  // start lock
       std::lock_guard<std::mutex> lock(goal_process_mutex_);
@@ -172,7 +173,7 @@ protected:
 
       // need to fill in trp.header since its sent to the result, but with what??
       if (goal->rois.size()==0){
-        result.segments[0] = move(trp);
+        result.segments[0] = move(trp);        
         result.tool_path_validities.at(0) = true;
         ROS_INFO("Full surface processed with %ld paths", result.segments[0].paths.size());
       }

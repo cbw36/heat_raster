@@ -106,11 +106,11 @@ public:
   static ProcessConfig getDefaultConfig()
   {
     ProcessConfig C;
-    C.run_density = 0.01;
-    C.offset_spacing = 0.015;
+    C.run_density = 0.1;
+    C.offset_spacing = 0.2;
     C.height_offset = 0.0;
-    C.min_hole_size = 0.01;
-    C.min_segment_size = 0.01;
+    C.min_hole_size = 0.2;
+    C.min_segment_size = 0.5;
 //    C.raster_rot_offset = 0.0;
     return (C);
   }
