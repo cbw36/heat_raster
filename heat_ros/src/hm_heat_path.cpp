@@ -239,7 +239,6 @@ char hmTriHeatPaths::extract_vchain(std::vector<int> &vertex_list,
 void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_vec)
 {
   SWRI_PROFILE("face_normal");
-  auto start = std::chrono::high_resolution_clock::now();
   num_face_norm_calls_ ++;
   // find all faces containing this vertex
   geometrycentral::surface::Vertex vert = mesh_->vertex(vertex_index);
@@ -297,9 +296,6 @@ void hmTriHeatPaths::face_normal(size_t vertex_index, Eigen::Vector3d& normal_ve
     normal_vec = normal_vec + nv;
   }
   normal_vec.normalize();  // re-normalize should be same as divide by number of normals
-  auto stop = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  std::cout << "Time taken by function: " << duration.count() << "\n";
 }
 
 void hmTriHeatPaths::build_vchain_graph(std::vector<int> &vchain, hmTriHeatPaths::VChainGraph& G)
